@@ -1,5 +1,5 @@
 [package]
-	authors = ["Ian Pratt <ianjdpratt@gmail.com"]
+	authors = ["Ian Pratt <ianjdpratt@gmail.com>"]
 	categories = [
 		"command-line-utilities",
 		"development-tools",
@@ -7,13 +7,7 @@
 	]
 	description = "The JavaScript executable bundler for Node.js projects"
 	edition = "2021"
-	keywords = [
-		"cli",
-		"javascript",
-		"nodejs",
-		"sea",
-		"single-executable-applications",
-	]
+	keywords = ["cli", "javascript", "node-sea", "nodejs", "sea"]
 	license = "MIT"
 	name = "jundler"
 	version = "0.1.0"

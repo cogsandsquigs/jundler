@@ -48,4 +48,3 @@
 
 [dev-dependencies]
 	assert_fs = "^1.1.1" # For testing file system operations
-	lit       = "^1.0.4" # To run tests against the CLI

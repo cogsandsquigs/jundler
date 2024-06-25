@@ -5,7 +5,7 @@ The **J**avaScript executable b**undler** for Node.js projects.
 ## Requirements
 
 -   An installation of `node`, `npm` and `npx`. Note that the version of `node` you're using must match the version you intend on bundling with Jundler. You can check your version of `node` by running `node -v` in your terminal.
--   OPTIONAL: `cargo` to install from `crates.io` directly instead of using the binaries.
+-   **OPTIONAL:** `cargo` to install from `crates.io` directly instead of using the binaries.
 
 ## Usage
 
@@ -58,3 +58,5 @@ Because it sounded funny and I liked it. :p
 ## TODO
 
 -   [ ] Spinners/progress bars + better UI
+-   [ ] Integration testing on test projects
+-   [ ] Unit test separate build steps

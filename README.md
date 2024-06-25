@@ -60,3 +60,4 @@ Because it sounded funny and I liked it. :p
 -   [ ] Spinners/progress bars + better UI
 -   [ ] Integration testing on test projects
 -   [ ] Unit test separate build steps
+-   [ ] Better error handling

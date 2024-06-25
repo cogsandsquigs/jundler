@@ -1,224 +1,21 @@
-use crate::js_config::{PackageConfig, SEAConfig};
+use super::platforms::Os;
+use super::Builder;
+use crate::js_config::SEAConfig;
 use anyhow::{anyhow, Context, Result};
-use core::fmt;
 use flate2::read::GzDecoder;
-use log::{debug, warn};
-use rand::distributions::{Alphanumeric, DistString};
+use log::debug;
 use reqwest::blocking::get;
-use semver::Version;
-use std::env::consts::{ARCH, OS};
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::{default, fs};
 use tar::Archive;
-use tempdir::TempDir;
-
-#[derive(clap::ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Os {
-    #[clap(alias = "darwin")]
-    MacOS,
-    Linux,
-    Windows,
-}
-
-impl Default for Os {
-    fn default() -> Self {
-        match OS {
-            "macos" | "darwin" => Os::MacOS,
-            "linux" => Os::Linux,
-            "windows" => Os::Windows,
-            _ => panic!("Building for unsupported os target!"),
-        }
-    }
-}
-
-impl fmt::Display for Os {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Os::MacOS => write!(f, "darwin"),
-            Os::Linux => write!(f, "linux"),
-            Os::Windows => write!(f, "win"),
-        }
-    }
-}
-
-#[derive(clap::ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Arch {
-    #[clap(alias = "x64")]
-    #[clap(alias = "x86_64")]
-    X64,
-
-    #[clap(alias = "x86")]
-    X86,
-
-    Arm64,
-}
-
-impl default::Default for Arch {
-    fn default() -> Self {
-        match ARCH {
-            "x86" => Arch::X86, // "x86" is not a valid value for ARCH, but we'll include it for completeness
-            "x64" | "x86_64" => Arch::X64,
-            "arm" | "aarch64" => Arch::Arm64,
-            _ => panic!("Building for unsupported architecture target!"),
-        }
-    }
-}
-
-impl fmt::Display for Arch {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Arch::X64 => write!(f, "x64"),
-            Arch::X86 => write!(f, "x86"),
-            Arch::Arm64 => write!(f, "arm64"),
-        }
-    }
-}
-
-pub struct Builder {
-    /// The directory to build the project in.
-    build_dir: PathBuf,
-
-    /// The directory of the project to build.
-    original_project_dir: PathBuf,
-
-    /// The current OS.
-    host_os: Os,
-
-    /// The version of Node.js to build with.
-    node_version: Version,
-
-    /// The OS to build for.
-    node_os: Os,
-
-    /// The architecture to build for.
-    node_arch: Arch,
-
-    /// The SEA configuration for the project.
-    sea_config: SEAConfig,
-
-    /// The package configuration for the project.
-    package_config: PackageConfig,
-
-    /// Whether or not we are bundling the project.
-    bundle: bool,
-}
-
-impl Builder {
-    pub fn new(
-        project_dir: PathBuf,
-        node_version: Version,
-        node_os: Os,
-        node_arch: Arch,
-        sea_config: SEAConfig,
-        package_config: PackageConfig,
-        bundle: bool,
-    ) -> Result<Self> {
-        // Create a temporary directory to store the build files.
-        let temp_dir = TempDir::new(
-            format!(
-                "node-build-{}",
-                Alphanumeric.sample_string(&mut rand::thread_rng(), 16)
-            )
-            .as_str(),
-        )
-        .context("Could not create a temporary directory to build in!")?;
-
-        Ok(Self {
-            build_dir: temp_dir.into_path(),
-            original_project_dir: project_dir,
-            host_os: Os::default(),
-            node_version,
-            node_os,
-            node_arch,
-            sea_config,
-            package_config,
-            bundle,
-        })
-    }
-
-    /// Builds the Node.js binary with the SEA blob, outputting it in the current directory.
-    pub fn build(&mut self) -> Result<()> {
-        debug!("Build in directory: {}", self.build_dir.display());
-
-        // Copy the project to the build directory
-        self.copy_project()?;
-
-        // Bundle the project if the user wants to
-        if self.bundle {
-            debug!("Bundling project with esbuild...");
-
-            self.bundle_project()?;
-
-            debug!("Bundled!");
-        }
-
-        debug!("Downloading Node.js binary...");
-
-        // Download the archive
-        let archive = self.download_node_archive()?;
-
-        debug!("Downloaded!");
-        debug!("Extracting Node.js binary...");
-
-        // Extract the archive
-        let node_bin = self.extract_node_archive(&archive)?;
-
-        debug!("Extracted!");
-        debug!("Generating SEA blob...");
-
-        // Generate the SEA blob
-        let sea_blob = self.gen_sea_blob()?;
-
-        debug!("SEA blob generated!");
-        debug!("Injecting app into Node.js binary...");
-
-        // Inject the app into the node binary
-        self.inject_app(&node_bin, &sea_blob)?;
-
-        debug!("Injected!");
-
-        // Move the binary to the current directory
-        let app_name = if self.node_os == Os::Windows {
-            self.package_config.name.clone() + ".exe"
-        } else {
-            self.package_config.name.clone()
-        };
-
-        let app_path = self.original_project_dir.join(&app_name);
-
-        fs::copy(self.build_dir.join(&app_name), &app_path)
-            .context("Error moving built binary to current working directory")?;
-
-        debug!("Binary moved to: {}", app_path.display());
-
-        // Codesign the binary if we're on MacOS
-        match (self.host_os, self.node_os) {
-            (Os::MacOS, Os::MacOS) => {
-                debug!("Codesigning binary for MacOS...");
-                self.macos_codesign(&app_path)?;
-                debug!("Signed!");
-            }
-
-            (_, Os::MacOS) => {
-                warn!("Warning: Not codesigning the binary because the host OS is not MacOS.");
-                warn!("This will cause an error when running the binary on MacOS.");
-                warn!("Please codesign the binary manually before distributing or running it.");
-            }
-
-            _ => {}
-        }
-
-        Ok(())
-    }
-}
 
 // Private helper functions to do steps of the build process
 impl Builder {
     /// Copy the project to the build directory, into a project folder.
-    fn copy_project(&self) -> Result<()> {
+    pub(super) fn copy_project(&self) -> Result<()> {
         let project_dir = self.build_dir.join("project");
 
         // Create the project directory in the build directory
@@ -245,7 +42,7 @@ impl Builder {
     }
 
     /// Bundle the project using `esbuild` if desired by the user.
-    fn bundle_project(&mut self) -> Result<()> {
+    pub(super) fn bundle_project(&mut self) -> Result<()> {
         // Install any and all packages required for the project
         let npm_install_cmd_output = Command::new("npm")
             .current_dir(&self.build_dir.join("project")) // Run the command in the project directory
@@ -303,7 +100,7 @@ impl Builder {
     }
 
     /// Download the Node.js archive from the official website, and returns the path to the downloaded file.
-    fn download_node_archive(&self) -> Result<PathBuf> {
+    pub(super) fn download_node_archive(&self) -> Result<PathBuf> {
         let node_folder_name = format!(
             "node-v{}-{}-{}",
             self.node_version, self.node_os, self.node_arch
@@ -359,7 +156,7 @@ impl Builder {
     }
 
     /// Extract the Node.js archive, and returns the path to the extracted binary.
-    fn extract_node_archive(&self, archive: &Path) -> Result<PathBuf> {
+    pub(super) fn extract_node_archive(&self, archive: &Path) -> Result<PathBuf> {
         // Extract the archive to `{build-dir}/node-v{version}-{os}-{arch}`
         let bin_path = match self.node_os {
             Os::MacOS | Os::Linux => {
@@ -415,7 +212,7 @@ impl Builder {
     }
 
     /// Generate the SEA blob for the Node.js binary.
-    fn gen_sea_blob(&self) -> Result<PathBuf> {
+    pub(super) fn gen_sea_blob(&self) -> Result<PathBuf> {
         // Get the path to `sea-config.json` from `{build-dir}/project/sea-config.json` because we want to use the
         // configuration that points to the bundled file IF the project was bundled (which is modified in the project
         // directory). Otherwise, this is the same as the original `sea-config.json` file.
@@ -451,7 +248,7 @@ impl Builder {
     }
 
     /// Injects the app into the node binary.
-    fn inject_app(&self, node_bin: &Path, sea_blob: &Path) -> Result<()> {
+    pub(super) fn inject_app(&self, node_bin: &Path, sea_blob: &Path) -> Result<()> {
         // Run the postject command
         let postject_cmd_output = Command::new("npx")
             .current_dir(&self.build_dir)
@@ -487,7 +284,7 @@ impl Builder {
     }
 
     /// Codesign the binary for MacOS
-    fn macos_codesign(&self, binary: &Path) -> Result<()> {
+    pub(super) fn macos_codesign(&self, binary: &Path) -> Result<()> {
         let codesign_cmd_output = Command::new("codesign")
             .arg("--force")
             .arg("--sign")

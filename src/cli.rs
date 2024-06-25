@@ -1,4 +1,4 @@
-use crate::builder::{Arch, Os};
+use crate::builder::platforms::{Arch, Os};
 use clap::Parser;
 use semver::Version;
 use std::path::PathBuf;
@@ -25,8 +25,8 @@ pub struct Args {
     #[arg(short, long, default_value_t = Arch::default())]
     pub arch: Arch,
 
-    /// Whether or not we should bundle the project instead of just compiling the `sea-config.json` main entrypoint.
-    #[arg(short, long)]
+    /// Bundle the project into a single JS file instead of just compiling the `sea-config.json` main entrypoint.
+    #[arg(short, long, default_value_t = false)]
     pub bundle: bool,
 }
 

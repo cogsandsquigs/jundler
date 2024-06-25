@@ -1,5 +1,5 @@
 {
 	"main": "index.js",
-	"output": "sea-prep.blob",
+	"output": "the-random-name-for-the-sea-prep-blob.blob",
 	"disableExperimentalSEAWarning": true
 }

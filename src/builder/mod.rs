@@ -1,5 +1,6 @@
 mod helpers;
 pub mod platforms;
+mod tests;
 
 use self::platforms::{Arch, Os};
 use crate::js_config::{PackageConfig, SEAConfig};
@@ -7,8 +8,8 @@ use anyhow::{Context, Result};
 use log::{debug, warn};
 use rand::distributions::{Alphanumeric, DistString};
 use semver::Version;
-use std::fs;
-use std::path::PathBuf;
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
 use tempdir::TempDir;
 
 pub struct Builder {
@@ -46,10 +47,11 @@ impl Builder {
         node_version: Version,
         node_os: Os,
         node_arch: Arch,
-        sea_config: SEAConfig,
-        package_config: PackageConfig,
         bundle: bool,
     ) -> Result<Self> {
+        // Get the configuration
+        let (sea_config, package_config) = get_configs(&project_dir)?;
+
         // Create a temporary directory to store the build files.
         let temp_dir = TempDir::new(
             format!(
@@ -149,4 +151,21 @@ impl Builder {
 
         Ok(())
     }
+}
+
+/// Gets the `sea-config.json` and `package.json` configurations from the project directory.
+fn get_configs(project_dir: &Path) -> Result<(SEAConfig, PackageConfig)> {
+    let sea_config = serde_json::from_reader(
+        File::open(project_dir.join("sea-config.json"))
+            .context("Could not find or open the `sea-config.json` file!")?,
+    )
+    .context("Could not parse the `sea-config.json` file!")?;
+
+    let package_config = serde_json::from_reader(
+        File::open(project_dir.join("package.json"))
+            .context("Could not find or open the `sea-config.json` file!")?,
+    )
+    .context("Could not parse the `package.json` file!")?;
+
+    Ok((sea_config, package_config))
 }

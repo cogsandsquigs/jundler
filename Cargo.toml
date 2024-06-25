@@ -5,6 +5,7 @@
 		"development-tools",
 		"programming-tools",
 	]
+	description = "The JavaScript executable bundler for Node.js projects"
 	edition = "2021"
 	keywords = [
 		"cli",

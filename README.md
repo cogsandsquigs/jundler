@@ -78,6 +78,7 @@ Because it sounded funny and I liked it. :p
 
 -   [x] Auto-detect TS / Modules and bundle accordingly
 -   [x] Unit test separate build steps
+-   [ ] Use locally installed Node.js runtime for bundling when version, os, and arch match
 -   [ ] Integration testing on test projects
 -   [ ] Spinners/progress bars + better UI
 -   [ ] Better error handling

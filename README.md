@@ -64,7 +64,7 @@ Yes, so long as you're on a macOS machine yourself. Jundler will automatically c
 
 Not yet, but since windows doesn't require codesigning for binaries to run (it will just give you a warning), this should be fine for now. All Windows binaries need to be manually signed on a Windows machine after being built.
 
-### Why "Jundler"?
+### Why the name "Jundler"?
 
 Because it sounded funny and I liked it. :p
 

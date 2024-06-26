@@ -13,7 +13,8 @@ tag-filter: &tag-filter
 executors:
     linux:
         docker:
-            - image: rust:latest # `latest` instead of `slim` because we need OpenSSL bindnigs.
+            # - image: rust:latest # `latest` instead of `slim` because we need OpenSSL bindnigs.
+            - image: vibbioinfocore/rust-node-ci:latest
 
         environment:
             CARGO_TERM_COLOR: always
@@ -45,20 +46,19 @@ jobs:
             - restore_cache:
                   key: jundler-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
 
-            # Install node
-            - run:
-                  name: "Install Node.js"
-                  command: |
-                      curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
-                      bash nodesource_setup.sh
-                      apt install -y nodejs
+            # # Install node
+            # - run:
+            #       name: "Install Node.js"
+            #       command: |
+            #           curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
+            #           bash nodesource_setup.sh
+            #           apt install -y nodejs
 
             # Test the code
             - run:
                   name: "Test dotbak"
                   # TODO: parallelize tests
                   command: |
-                      ulimit -n 1048575 # Due to error with esbuild not working with default ulimit
                       cargo test
 
             # Save buildfiles and dependencies to cache

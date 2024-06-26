@@ -49,6 +49,7 @@ jobs:
             - run:
                   name: "Install Node.js"
                   command: |
+                      apt update &&
                       apt install nodejs
 
             # Test the code

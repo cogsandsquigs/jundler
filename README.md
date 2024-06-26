@@ -1,6 +1,21 @@
+[![License](https://img.shields.io/github/license/cogsandsquigs/jundler?style=for-the-badge)](https://github.com/cogsandsquigs/jundler/blob/main/LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/jundler?style=for-the-badge)](https://crates.io/crates/jundler)
+[![Crates.io Downloads (recent)](https://img.shields.io/crates/dr/jundler?style=for-the-badge)](https://crates.io/crates/jundler)
+
 # Jundler
 
-The **J**avaScript executable b**undler** for Node.js projects.
+> The **J**avaScript executable b**undler** for Node.js projects.
+
+Jundler is a tool that bundles your Node.js project into a single executable file. It uses the new [Single Executable Application API](https://nodejs.org/api/single-executable-applications.html) to bundle your project, which can then be run on any platform without needing to install Node.js or any dependencies.
+
+## Why Jundler?
+
+Jundler, unlike other executable bundlers (like [pkg](https://github.com/vercel/pkg), [boxednode](https://github.com/mongodb-js/boxednode), or [js2bin](https://github.com/criblio/js2bin)), uses the latest [Single Executable Application API](https://nodejs.org/api/single-executable-applications.html). And, unlike other bundlers, Jundler is written in Rust, which makes it faster and more efficient! Jundler also supports:
+
+-   Cross-compilation
+-   TypeScript and Modules (via ESBuild)
+-   Automatic codesigning for macOS (Windows coming soon!)
+-   And more!
 
 ## Requirements
 
@@ -62,3 +77,5 @@ Because it sounded funny and I liked it. :p
 -   [ ] Integration testing on test projects
 -   [ ] Unit test separate build steps
 -   [ ] Better error handling
+-   [ ] Auto-download of Node.js host runtime to make the process work w/o Node.js installed
+-   [x] Auto-detect TS / Modules and bundle accordingly

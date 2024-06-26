@@ -64,17 +64,12 @@ fn test_simple() {
 
 #[test]
 fn test_simple_bundle() {
-    test_runner(
-        "simple-bundle",
-        &["--bundle"],
-        "Hello, world!\n1 + 2 = 3",
-        "",
-    );
+    test_runner("simple-bundle", &[], "Hello, world!\n1 + 2 = 3", "");
 }
 
 #[test]
 fn test_simple_ts() {
-    test_runner("simple-ts", &["--bundle"], "Hello, world!", "");
+    test_runner("simple-ts", &[], "Hello, world!", "");
 }
 
 // NOTE: This requires a binary of `node` (version 22.3.0) to be installed in `tests/fixtures/custom-node/node`

@@ -3,7 +3,7 @@ pub mod platforms;
 mod tests;
 
 use self::platforms::{Arch, Os};
-use crate::js_config::{PackageConfig, SEAConfig};
+use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
 use anyhow::{Context, Result};
 use log::{debug, warn};
 use rand::distributions::{Alphanumeric, DistString};
@@ -87,8 +87,20 @@ impl Builder {
         // Copy the project to the build directory
         self.copy_project()?;
 
-        // Bundle the project if the user wants to
-        if self.bundle {
+        // Bundle the project if the user wants to, or if the project is a module or TypeScript project
+        if self.bundle
+            || self.package_config.project_type == ProjectType::Module
+            || self
+                .package_config
+                .main
+                .as_ref()
+                .is_some_and(|m| m.ends_with(".mjs"))
+            || self
+                .package_config
+                .main
+                .as_ref()
+                .is_some_and(|m| m.ends_with(".ts"))
+        {
             debug!("Bundling project with esbuild...");
 
             self.bundle_project()?;

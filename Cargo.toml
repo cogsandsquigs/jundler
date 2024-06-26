@@ -7,9 +7,11 @@
 	]
 	description = "The JavaScript executable bundler for Node.js projects"
 	edition = "2021"
-	keywords = ["cli", "javascript", "node-sea", "nodejs", "sea"]
+	keywords = ["binaries", "bundler", "cli", "javascript", "nodejs"]
 	license = "MIT"
 	name = "jundler"
+	readme = "README.md"
+	repository = "https://github.com/cogsandsquigs/jundler"
 	version = "0.2.0"
 
 	# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

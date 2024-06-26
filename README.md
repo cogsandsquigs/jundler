@@ -45,7 +45,8 @@ Yes! Just specify the OS and architecture you want to build using the `-o` and `
 
 Yes, so long as you're on a macOS machine yourself. Jundler will automatically codesign your executable without any additional input from you!
 
-> Note that if you're building for macOS on a different platform, the binary will have to be manually signed on a macOS machine. Jundler should give you a warning about this.
+> [!NOTE]
+> If you're building for macOS on a different platform, the binary will have to be manually signed on a macOS machine. Jundler should give you a warning about this.
 
 ### Does Jundler support codesigning for Windows?
 

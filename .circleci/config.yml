@@ -45,19 +45,11 @@ jobs:
             - restore_cache:
                   key: jundler-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
 
-            # Install nvm
-            - run:
-                  name: "Install NVM"
-                  command: |
-                      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-
             # Install node
             - run:
                   name: "Install Node.js"
                   command: |
-                      export NVM_DIR="$HOME/.nvm"
-                      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-                      nvm install node
+                      sudo apt install nodejs
 
             # Test the code
             - run:

@@ -15,7 +15,7 @@ use tar::Archive;
 // Private helper functions to do steps of the build process
 impl Builder {
     /// Copy the project to the build directory, into a project folder.
-    pub(super) fn copy_project(&self) -> Result<()> {
+    pub(super) fn copy_and_prepare_project(&self) -> Result<()> {
         let project_dir = self.build_dir.join("project");
 
         // Create the project directory in the build directory
@@ -42,6 +42,8 @@ impl Builder {
         let npm_install_cmd_output = Command::new("npm")
             .current_dir(&self.build_dir.join("project")) // Run the command in the project directory
             .arg("install")
+            .arg(format!("--target_platform={}", self.node_os))
+            .arg(format!("--target_arch={}", self.node_arch))
             .output()
             .context("Error running npm install")?;
 
@@ -70,7 +72,6 @@ impl Builder {
                     .unwrap_or(&self.sea_config.main),
             )
             .arg("--bundle")
-            .arg("--minify")
             .arg("--platform=node") // Bundle for Node.js
             .arg("--outfile=bundled.js") // Output to `bundled.js` in the build directory
             .output()

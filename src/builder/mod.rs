@@ -85,7 +85,7 @@ impl Builder {
         debug!("Build in directory: {}", self.build_dir.display());
 
         // Copy the project to the build directory
-        self.copy_project()?;
+        self.copy_and_prepare_project()?;
 
         // Bundle the project if the user wants to, or if the project is a module or TypeScript project
         if self.bundle

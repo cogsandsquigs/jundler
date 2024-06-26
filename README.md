@@ -39,15 +39,21 @@ Because both Jundler and the [Single Executable Application API](https://nodejs.
 
 ### I'm getting an import error when I run my bundled executable. What do I do?
 
-This is a known issue with the Single Executable Application API, as it does not support `import` or `require`. To fix this, just tell Jundler to bundle your project with the `--bundle`/`-b` flag.
+This is a known issue with the Single Executable Application API, as it does not support `import` or `require`. Jundler automagically fixes this by bundling your project with ESBuild, which will automatically convert all `import` statements to `require` statements. If you're still having issues, please open an issue on the [Jundler GitHub repository](https://github.com/cogsandsquigs/jundler/issues).
 
-```bash
-jundler <path-to-nodejs-project> --bundle
-```
+> [!NOTE]
+> To manually fix this, just tell Jundler to bundle your project with the `--bundle`/`-b` flag.
+>
+> ```bash
+>  jundler <path-to-nodejs-project> --bundle
+> ```
 
 ### Does Jundler support TypeScript?
 
-Yup. Just specify the `--bundle`/`-b` flag when running Jundler --- ESBuild does the rest!
+Yup. Jundler will automagically detect typescript --- ESBuild does the rest!
+
+> [!NOTE]
+> If Jundler is having issues with your TypeScript project, try running `jundler <path-to-nodejs-project> --bundle` to bundle your project.
 
 ### Does Jundler support cross-compilation?
 

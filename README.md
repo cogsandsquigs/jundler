@@ -73,9 +73,9 @@ Because it sounded funny and I liked it. :p
 
 ## TODO
 
--   [ ] Spinners/progress bars + better UI
+-   [x] Auto-detect TS / Modules and bundle accordingly
+-   [x] Unit test separate build steps
 -   [ ] Integration testing on test projects
--   [ ] Unit test separate build steps
+-   [ ] Spinners/progress bars + better UI
 -   [ ] Better error handling
 -   [ ] Auto-download of Node.js host runtime to make the process work w/o Node.js installed
--   [x] Auto-detect TS / Modules and bundle accordingly

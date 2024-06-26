@@ -35,7 +35,7 @@ jundler <path-to-nodejs-project> --bundle
 
 ### Does Jundler support TypeScript?
 
-No, but as long as you can compile your project to JS and point `sea-config.json`'s `main` attribute to the output JS file, Jundler should work just fine.
+Yup. Just specify the `--bundle`/`-b` flag when running Jundler --- ESBuild does the rest!
 
 ### Does Jundler support cross-compilation?
 

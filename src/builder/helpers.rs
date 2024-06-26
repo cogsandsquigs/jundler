@@ -38,11 +38,6 @@ impl Builder {
             project_dir.display()
         ))?;
 
-        Ok(())
-    }
-
-    /// Bundle the project using `esbuild` if desired by the user.
-    pub(super) fn bundle_project(&mut self) -> Result<()> {
         // Install any and all packages required for the project
         let npm_install_cmd_output = Command::new("npm")
             .current_dir(&self.build_dir.join("project")) // Run the command in the project directory
@@ -58,12 +53,24 @@ impl Builder {
             ));
         }
 
+        Ok(())
+    }
+
+    /// Bundle the project using `esbuild` if desired by the user.
+    pub(super) fn bundle_project(&mut self) -> Result<()> {
         // Run the esbuild command
         let esbuild_cmd_output = Command::new("npx")
             .current_dir(&self.build_dir.join("project")) // Run the command in the project directory
             .arg("esbuild")
-            .arg(&self.sea_config.main)
+            // Use the main entrypoint from the package.json file, or the default from the sea-config.json file
+            .arg(
+                self.package_config
+                    .main
+                    .as_ref()
+                    .unwrap_or(&self.sea_config.main),
+            )
             .arg("--bundle")
+            .arg("--minify")
             .arg("--platform=node") // Bundle for Node.js
             .arg("--outfile=bundled.js") // Output to `bundled.js` in the build directory
             .output()
@@ -97,6 +104,21 @@ impl Builder {
         ))?;
 
         Ok(())
+    }
+
+    /// Use custom node binary if provided by the user.
+    pub(super) fn use_custom_node(&self, custom_node: &Path) -> Result<PathBuf> {
+        let new_bin_path = self.build_dir.join(if self.node_os == Os::Windows {
+            "node.exe"
+        } else {
+            "node"
+        });
+
+        // Copy the custom node binary to the build directory
+        fs::copy(custom_node, &new_bin_path)
+            .context("Error copying custom node binary to build directory")?;
+
+        Ok(new_bin_path)
     }
 
     /// Download the Node.js archive from the official website, and returns the path to the downloaded file.
@@ -199,9 +221,9 @@ impl Builder {
         };
 
         let new_bin_path = self.build_dir.join(if self.node_os == Os::Windows {
-            self.package_config.name.clone() + ".exe"
+            "node.exe"
         } else {
-            self.package_config.name.clone()
+            "node"
         });
 
         // Move to the build directory and rename the binary

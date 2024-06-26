@@ -71,3 +71,25 @@ fn test_simple_bundle() {
         "",
     );
 }
+
+#[test]
+fn test_simple_ts() {
+    test_runner("simple-ts", &["--bundle"], "Hello, world!", "");
+}
+
+// NOTE: This requires a binary of `node` (version 22.3.0) to be installed in `tests/fixtures/custom-node/node`
+#[ignore]
+#[test]
+fn test_custom_node() {
+    // Get path to node binary stored in "tests/fixtures/custom-node/node"
+    let node_path = PathBuf::from("tests/fixtures/custom-node/node")
+        .canonicalize()
+        .unwrap();
+
+    test_runner(
+        "custom-node",
+        &["-n", "22.3.0", "--custom-node", node_path.to_str().unwrap()],
+        "Hello, world!\nThis binary is currently running node version: v22.3.0",
+        "",
+    );
+}

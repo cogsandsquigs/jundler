@@ -39,6 +39,9 @@ pub struct Builder {
 
     /// Whether or not we are bundling the project.
     bundle: bool,
+
+    /// A possible path to the Node.js binary.
+    custom_node: Option<PathBuf>,
 }
 
 impl Builder {
@@ -48,6 +51,7 @@ impl Builder {
         node_os: Os,
         node_arch: Arch,
         bundle: bool,
+        custom_node: Option<PathBuf>,
     ) -> Result<Self> {
         // Get the configuration
         let (sea_config, package_config) = get_configs(&project_dir)?;
@@ -72,6 +76,7 @@ impl Builder {
             sea_config,
             package_config,
             bundle,
+            custom_node,
         })
     }
 
@@ -91,18 +96,27 @@ impl Builder {
             debug!("Bundled!");
         }
 
-        debug!("Downloading Node.js binary...");
+        let node_bin = if let Some(custom_node) = &self.custom_node {
+            debug!("Using custom Node.js binary: {}", custom_node.display());
 
-        // Download the archive
-        let archive = self.download_node_archive()?;
+            self.use_custom_node(custom_node)?
+        } else {
+            debug!("Downloading Node.js binary...");
 
-        debug!("Downloaded!");
-        debug!("Extracting Node.js binary...");
+            // Download the archive
+            let archive = self.download_node_archive()?;
 
-        // Extract the archive
-        let node_bin = self.extract_node_archive(&archive)?;
+            debug!("Downloaded!");
+            debug!("Extracting Node.js binary...");
 
-        debug!("Extracted!");
+            // Extract the archive
+            let node_bin = self.extract_node_archive(&archive)?;
+
+            debug!("Extracted!");
+
+            node_bin
+        };
+
         debug!("Generating SEA blob...");
 
         // Generate the SEA blob
@@ -117,15 +131,15 @@ impl Builder {
         debug!("Injected!");
 
         // Move the binary to the current directory
-        let app_name = if self.node_os == Os::Windows {
-            self.package_config.name.clone() + ".exe"
+        let (bin_name, app_name) = if self.node_os == Os::Windows {
+            ("node.exe", self.package_config.name.clone() + ".exe")
         } else {
-            self.package_config.name.clone()
+            ("node", self.package_config.name.clone())
         };
 
-        let app_path = self.original_project_dir.join(&app_name);
+        let app_path = self.original_project_dir.join(app_name);
 
-        fs::copy(self.build_dir.join(&app_name), &app_path)
+        fs::copy(self.build_dir.join(bin_name), &app_path)
             .context("Error moving built binary to current working directory")?;
 
         debug!("Binary moved to: {}", app_path.display());

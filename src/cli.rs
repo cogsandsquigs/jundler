@@ -9,7 +9,7 @@ use std::path::PathBuf;
 pub struct Args {
     /// The path to the directory where the project to build is located. Note that the output binary will be
     /// placed in this directory as well.
-    #[command()]
+    #[clap(default_value = ".")]
     pub project_dir: PathBuf,
 
     /// The version of Node.js you want to bundle with your application. This MUST match your installed/currently
@@ -25,9 +25,14 @@ pub struct Args {
     #[arg(short, long, default_value_t = Arch::default())]
     pub arch: Arch,
 
-    /// Bundle the project into a single JS file instead of just compiling the `sea-config.json` main entrypoint.
+    /// Bundle the project into a single JS file instead of just compiling the `sea-config.json` main entrypoint. This
+    /// will also bundle the Node.js runtime.
     #[arg(short, long, default_value_t = false)]
     pub bundle: bool,
+
+    /// A path to a custom node binary to use for building the project.
+    #[arg(short, long)]
+    pub custom_node: Option<PathBuf>,
 }
 
 fn current_node_version() -> Version {

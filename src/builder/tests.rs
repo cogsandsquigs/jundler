@@ -13,9 +13,10 @@ fn test_new_builder() {
         Os::Linux,
         Arch::X64,
         false,
+        None,
     );
 
-    assert!(result.is_ok());
+    // assert!(result.is_ok());
 
     let builder = result.unwrap();
 

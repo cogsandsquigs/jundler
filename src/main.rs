@@ -32,6 +32,7 @@ fn main() -> Result<()> {
         args.os,
         args.arch,
         args.bundle,
+        args.custom_node,
     )?;
 
     builder.build()?;

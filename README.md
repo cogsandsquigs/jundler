@@ -10,12 +10,9 @@ Jundler is a tool that bundles your Node.js project into a single executable fil
 
 ## Why Jundler?
 
-Jundler, unlike other executable bundlers (like [pkg](https://github.com/vercel/pkg), [boxednode](https://github.com/mongodb-js/boxednode), or [js2bin](https://github.com/criblio/js2bin)), uses the latest [Single Executable Application API](https://nodejs.org/api/single-executable-applications.html). And, unlike other bundlers, Jundler is written in Rust, which makes it faster and more efficient! Jundler also supports:
+Jundler, unlike other executable bundlers (like [pkg](https://github.com/vercel/pkg), [boxednode](https://github.com/mongodb-js/boxednode), or [js2bin](https://github.com/criblio/js2bin)), uses the latest [Single Executable Application API](https://nodejs.org/api/single-executable-applications.html). And, unlike other bundlers, Jundler is written in Rust, which makes it faster and more efficient!
 
--   Cross-compilation
--   TypeScript and Modules (via ESBuild)
--   Automatic codesigning for macOS (Windows coming soon!)
--   And more!
+For more features, see the [FAQ](#faq).
 
 ## Requirements
 

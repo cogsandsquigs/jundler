@@ -49,7 +49,7 @@ jobs:
             - run:
                   name: "Install Node.js"
                   command: |
-                      sudo apt install nodejs
+                      apt install nodejs
 
             # Test the code
             - run:

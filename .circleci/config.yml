@@ -1,0 +1,100 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Note: filters act like an OR, not an AND
+tag-filter: &tag-filter
+    tags:
+        only:
+            - /^v.*/
+    branches:
+        ignore: /.*/
+
+executors:
+    linux:
+        docker:
+            - image: rust:latest # `latest` instead of `slim` because we need OpenSSL bindnigs.
+
+        environment:
+            CARGO_TERM_COLOR: always
+            CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+
+    mac:
+        macos:
+            xcode: 15.4.0
+
+        environment:
+            CARGO_TERM_COLOR: always
+            CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+    test-linux:
+        executor: linux
+
+        # # Add steps to the job
+        # # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+        # parallelism: 4
+
+        steps:
+            # Checkout the code from GitHub
+            - checkout
+
+            # Restore cached dependencies
+            - restore_cache:
+                  key: jundler-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
+
+            # Test the code
+            - run:
+                  name: "Test dotbak"
+                  # TODO: parallelize tests
+                  command: |
+                      cargo test
+
+            # Save buildfiles and dependencies to cache
+            - save_cache:
+                  key: jundler-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
+                  paths:
+                      - target
+
+    cargo-publish:
+        executor: linux
+
+        steps:
+            - checkout
+
+              # Restore cached dependencies
+            - restore_cache:
+                  key: dotbak-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
+
+            # Test the code
+            - run:
+                  name: "Cargo publish"
+                  # TODO: parallelize tests
+                  command: |
+                      cargo publish --token $CARGO_PUBLISH_TOKEN
+
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+    # Test the code on Linux
+    test:
+        jobs:
+            - test-linux
+
+    # Publish to crates.io on tags
+    publish:
+        jobs:
+            - test-linux:
+                  # Note: filters act like an OR, not an AND
+                  filters: *tag-filter
+
+            - cargo-publish:
+                  context: cargo-publish
+
+                  requires:
+                      - test-linux
+
+                  # Note: filters act like an OR, not an AND
+                  filters: *tag-filter

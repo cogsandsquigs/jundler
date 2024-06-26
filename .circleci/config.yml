@@ -50,7 +50,7 @@ jobs:
                   name: "Install Node.js"
                   command: |
                       apt update &&
-                      apt install nodejs -y
+                      apt install nodejs npm npx -y
 
             # Test the code
             - run:

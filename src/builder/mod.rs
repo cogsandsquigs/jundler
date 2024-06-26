@@ -170,6 +170,18 @@ impl Builder {
                 warn!("Please codesign the binary manually before distributing or running it.");
             }
 
+            (Os::Windows, Os::Windows) => {
+                debug!("Signing binary for Windows...");
+                self.windows_sign(&app_path)?;
+                debug!("Signed!");
+            }
+
+            (_, Os::Windows) => {
+                warn!("Warning: Not signing the binary because the host OS is not Windows.");
+                warn!("The binary will still be runnable, but it will raise a warning message with the user.");
+                warn!("Please sign the binary manually before distributing or running it.");
+            }
+
             _ => {
                 // Don't codesign the binary
             }

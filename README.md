@@ -53,7 +53,7 @@ This is a known issue with the Single Executable Application API, as it does not
 Yup. Jundler will automagically detect typescript --- ESBuild does the rest!
 
 > [!NOTE]
-> If Jundler is having issues with your TypeScript project, try running `jundler <path-to-nodejs-project> --bundle` to bundle your project.
+> If Jundler is having issues with your TypeScript project, try running `jundler <path-to-nodejs-project> --bundle` to bundle your project manually.
 
 ### Does Jundler support cross-compilation?
 

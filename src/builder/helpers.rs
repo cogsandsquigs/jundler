@@ -3,7 +3,7 @@ use super::Builder;
 use crate::js_config::SEAConfig;
 use anyhow::{anyhow, Context, Result};
 use flate2::read::GzDecoder;
-use log::debug;
+use log::{debug, warn};
 use reqwest::blocking::get;
 use std::fs;
 use std::fs::File;
@@ -320,6 +320,29 @@ impl Builder {
                 "Error codesigning the binary:\n{}\n{}",
                 String::from_utf8_lossy(&codesign_cmd_output.stdout),
                 String::from_utf8_lossy(&codesign_cmd_output.stderr)
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Codesign the binary for Windows
+    pub(super) fn windows_sign(&self, binary: &Path) -> Result<()> {
+        warn!("Windows signing is in beta and may not work as expected. Please report any issues here: https://github.com/cogsandsquigs/jundler/issues/new");
+
+        let sign_cmd_output = Command::new("signtool")
+            .arg("sign")
+            .arg("/fd")
+            .arg("SHA256")
+            .arg(binary)
+            .output()
+            .context("Error signing the binary")?;
+
+        if !sign_cmd_output.status.success() {
+            return Err(anyhow!(
+                "Error signing the binary:\n{}\n{}",
+                String::from_utf8_lossy(&sign_cmd_output.stdout),
+                String::from_utf8_lossy(&sign_cmd_output.stderr)
             ));
         }
 

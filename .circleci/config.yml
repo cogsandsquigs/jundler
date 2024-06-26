@@ -49,8 +49,9 @@ jobs:
             - run:
                   name: "Install Node.js"
                   command: |
-                      apt update &&
-                      apt install nodejs npm npx -y
+                      curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh &
+                      bash nodesource_setup.sh &
+                      apt install -y build-essential nodejs npm npx
 
             # Test the code
             - run:

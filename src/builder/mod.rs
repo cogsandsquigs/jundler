@@ -110,18 +110,19 @@ impl Builder {
         // debug!("Extracted!");
 
         // Get the node binary
-        let node_bin = self.node_manager.get_target_binary(&self.node_version)?;
+        let target_node_bin = self.node_manager.get_target_binary(&self.node_version)?;
+        let host_node_bin = self.node_manager.get_host_binary(&self.node_version)?;
 
         debug!("Generating SEA blob..."); // TODO: Better ui
 
         // Generate the SEA blob
-        let sea_blob = self.gen_sea_blob()?;
+        let sea_blob = self.gen_sea_blob(&host_node_bin)?;
 
         debug!("SEA blob generated!");
         debug!("Injecting app into Node.js binary...");
 
         // Inject the app into the node binary
-        self.inject_app(&node_bin, &sea_blob)?;
+        self.inject_app(&target_node_bin, &sea_blob)?;
 
         debug!("Injected!");
 
@@ -134,7 +135,7 @@ impl Builder {
 
         let app_path = self.original_project_dir.join(app_name);
 
-        fs::copy(node_bin, &app_path)
+        fs::copy(target_node_bin, &app_path)
             .context("Error moving built binary to current working directory")?;
 
         debug!("Binary moved to: {}", app_path.display());

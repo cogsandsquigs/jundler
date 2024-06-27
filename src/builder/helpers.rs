@@ -108,7 +108,7 @@ impl Builder {
     }
 
     /// Generate the SEA blob for the Node.js binary.
-    pub(super) fn gen_sea_blob(&self) -> Result<PathBuf> {
+    pub(super) fn gen_sea_blob(&self, host_node_bin: &Path) -> Result<PathBuf> {
         // Get the path to `sea-config.json` from `{build-dir}/project/sea-config.json` because we want to use the
         // configuration that points to the bundled file IF the project was bundled (which is modified in the project
         // directory). Otherwise, this is the same as the original `sea-config.json` file.
@@ -118,7 +118,7 @@ impl Builder {
             .join("project")
             .join("sea-config.json");
         // Generate the SEA blob
-        let sea_blob_cmd_output = Command::new("node")
+        let sea_blob_cmd_output = Command::new(host_node_bin)
             .current_dir(&self.working_dir.path().join("project")) // Run the command in the project directory
             .arg("--experimental-sea-config")
             .arg(sea_conf_path)

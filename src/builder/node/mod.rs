@@ -110,6 +110,11 @@ impl NodeManager {
             self.download(version, self.host_os, self.host_arch)?.0
         };
 
+        // Make the binary executable on Unix-based systems
+        if cfg!(unix) {
+            make_executable(&binary_path)?
+        };
+
         Ok(binary_path)
     }
 
@@ -126,6 +131,11 @@ impl NodeManager {
         // If it doesn't exist, download it
         else {
             self.download(version, self.target_os, self.target_arch)?.0
+        };
+
+        // Make the binary executable on Unix-based systems
+        if cfg!(unix) {
+            make_executable(&binary_path)?
         };
 
         Ok(binary_path)
@@ -266,6 +276,30 @@ impl NodeManager {
 
         Ok(extracted_binary_path)
     }
+}
+
+/// On Unix-based systems, make the binary executable.
+fn make_executable(binary_path: &Path) -> Result<(), Error> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let mut perms = binary_path
+        .metadata()
+        .map_err(|err| Error::Io {
+            err,
+            path: binary_path.to_path_buf(),
+            action: "getting metadata for node binary at".to_string(),
+        })?
+        .permissions();
+
+    perms.set_mode(0o755);
+
+    fs::set_permissions(binary_path, perms).map_err(|err| Error::Io {
+        err,
+        path: binary_path.to_path_buf(),
+        action: "setting permissions for node binary at".to_string(),
+    })?;
+
+    Ok(())
 }
 
 /// Rearchive *just* the binary and copy the node binary into the cache directory. Returns the path to the copied binary.

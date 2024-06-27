@@ -1,10 +1,10 @@
+use super::helpers::calculate_checksum;
 use super::platforms::{Arch, Os};
 use super::Error;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use std::fs;
 use std::path::PathBuf;
-use std::{fs, io};
 
 pub type Checksum = [u8; 32];
 
@@ -42,7 +42,7 @@ impl NodeManagerLock {
     }
 
     /// Save the lockfile
-    pub fn save(&self) -> Result<(), Error> {
+    pub fn save(&mut self) -> Result<(), Error> {
         let lockfile_contents = bincode::serialize(&self.node_executables)?;
 
         fs::write(&self.lockfile_path, lockfile_contents).map_err(|err| Error::Io {
@@ -83,14 +83,14 @@ pub struct NodeExecutable {
 /// A (compressed) node executable that can be uncompressed and used/ran
 impl NodeExecutable {
     /// Create a new node executable
-    pub fn new(version: Version, arch: Arch, os: Os, path: PathBuf) -> Self {
-        let checksum = calculate_checksum(&path);
+    pub fn new(version: Version, arch: Arch, os: Os, path: PathBuf) -> Result<Self, Error> {
+        let checksum = calculate_checksum(&path)?;
 
-        Self {
+        Ok(Self {
             meta: NodeExecutableMeta { version, arch, os },
             checksum,
             path,
-        }
+        })
     }
 
     /// Validate that the checksum of the file matches against any checksum
@@ -110,19 +110,4 @@ pub struct NodeExecutableMeta {
 
     /// The operating system of the node executable
     pub os: Os,
-}
-
-/// Calculate the SHA256 checksum of a file
-fn calculate_checksum(path: &PathBuf) -> Checksum {
-    // Open the file
-    let mut file = fs::File::open(path).unwrap();
-
-    // Prepare the hasher
-    let mut hasher = Sha256::new();
-
-    // Copy the file into the hasher, and hash it
-    io::copy(&mut file, &mut hasher).unwrap();
-
-    // Output the hash and convert it into a 32-byte array
-    hasher.finalize().into()
 }

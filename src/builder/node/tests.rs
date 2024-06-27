@@ -12,7 +12,7 @@ fn create_node_manager() {
     let tmp_dir = TempDir::new().unwrap();
     let tmp_path = tmp_dir.path().to_path_buf();
 
-    let node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
+    let mut node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
 
     assert_eq!(node_manager.host_os, get_host_os());
     assert_eq!(node_manager.host_arch, get_host_arch());
@@ -33,13 +33,35 @@ fn create_node_manager() {
     assert_eq!(lockfile_contents, expected_lockfile_contents);
 }
 
+/// Test we can download node and calculate checksums
+#[test]
+fn download_and_save_node() {
+    let tmp_dir = TempDir::new().unwrap();
+    let tmp_path = tmp_dir.path().to_path_buf();
+
+    let mut node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
+
+    // Download from https://nodejs.org/dist/v22.3.0/node-v22.3.0-linux-x64.tar.gz
+
+    let expected_checksum =
+        <[u8; 32]>::from_hex("a6d4fbf4306a883b8e1d235a8a890be84b9d95d2d39b929520bed64da41ce540")
+            .unwrap();
+
+    let path = node_manager
+        .download("22.3.0".parse().unwrap(), Os::Linux, Arch::X64)
+        .unwrap();
+
+    // Errors on the unwrap b/c checksums mismatch. This isn't caused by downloading a corrupt file (as it has a proper checksum
+    // when checked with `sha256sum`), so it must be an error reading the file OR computing the checksum.
+}
+
 /// Test that we can create, save and load a lockfile
 #[test]
 fn create_save_load_lockfile() {
     // Get random tempdir for lockfile
     let lockfile_path = NamedTempFile::new("jundler.lockb").unwrap();
 
-    let lockfile = NodeManagerLock::new(
+    let mut lockfile = NodeManagerLock::new(
         vec![
             NodeExecutable {
                 meta: NodeExecutableMeta {

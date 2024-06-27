@@ -24,7 +24,6 @@ pub fn parse_checksum_file(input: &str) -> Result<Vec<(Checksum, NodeExecutableM
         match parse_checksum_file_entry(line) {
             Ok((_, entry)) => entries.push(entry),
             Err(err) => {
-                println!("Failed to parse checksum file entry: {}: {}", line, err);
                 continue;
             }
         }

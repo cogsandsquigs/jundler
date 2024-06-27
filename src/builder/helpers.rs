@@ -1,4 +1,4 @@
-use super::platforms::Os;
+use super::node::Os;
 use super::Builder;
 use crate::js_config::SEAConfig;
 use anyhow::{anyhow, Context, Result};

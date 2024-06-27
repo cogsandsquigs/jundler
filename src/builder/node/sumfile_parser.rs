@@ -1,6 +1,6 @@
 use super::lock::{Checksum, NodeExecutableMeta};
+use super::platforms::{Arch, Os};
 use super::Error;
-use crate::builder::platforms::{Arch, Os};
 use nom::branch::alt;
 use nom::character::complete::one_of;
 use nom::combinator::recognize;
@@ -78,8 +78,8 @@ fn parse_version(input: &str) -> IResult<&str, semver::Version> {
 
     let version_str = version_str.0.to_owned() + "." + version_str.2 + "." + version_str.4;
 
-    let version = semver::Version::parse(&version_str)
-        .expect("Node.js versions should always conform to semver!");
+    let version =
+        Version::parse(&version_str).expect("Node.js versions should always conform to semver!");
 
     Ok((input, version))
 }

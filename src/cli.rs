@@ -1,4 +1,4 @@
-use crate::builder::platforms::{Arch, Os};
+use crate::builder::node::{Arch, Os};
 use clap::Parser;
 use semver::Version;
 use std::path::PathBuf;

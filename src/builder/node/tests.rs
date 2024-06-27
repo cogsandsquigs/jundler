@@ -1,10 +1,37 @@
 #![cfg(test)]
 
 use super::*;
-use assert_fs::NamedTempFile;
+use assert_fs::{NamedTempFile, TempDir};
 use hex::FromHex;
 use lock::{NodeExecutable, NodeExecutableMeta};
 use sumfile_parser::parse_checksum_file;
+
+/// Test that we can create a new NodeManager
+#[test]
+fn create_node_manager() {
+    let tmp_dir = TempDir::new().unwrap();
+    let tmp_path = tmp_dir.path().to_path_buf();
+
+    let node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
+
+    assert_eq!(node_manager.host_os, get_host_os());
+    assert_eq!(node_manager.host_arch, get_host_arch());
+    assert_eq!(node_manager.target_os, Os::Linux);
+    assert_eq!(node_manager.target_arch, Arch::X64);
+    assert_eq!(node_manager.node_cache_dir, tmp_path);
+
+    let expected_lockfile = NodeManagerLock::new(Vec::new(), tmp_path.join("jundler.lockb"));
+
+    assert_eq!(node_manager.lockfile, expected_lockfile);
+
+    // Check the contents of the file is equal to `expected_lockfile` serialized
+    node_manager.lockfile.save().unwrap();
+
+    let lockfile_contents = std::fs::read(tmp_path.join("jundler.lockb")).unwrap();
+    let expected_lockfile_contents = bincode::serialize(&expected_lockfile).unwrap();
+
+    assert_eq!(lockfile_contents, expected_lockfile_contents);
+}
 
 /// Test that we can create, save and load a lockfile
 #[test]

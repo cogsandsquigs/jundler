@@ -1,12 +1,11 @@
 mod helpers;
-mod node;
-pub mod platforms;
+pub mod node;
 mod tests;
 
-use self::platforms::{Arch, Os};
 use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
 use anyhow::{Context, Result};
 use log::{debug, warn};
+use node::{Arch, Os};
 use rand::distributions::{Alphanumeric, DistString};
 use semver::Version;
 use std::fs::{self, File};

@@ -67,3 +67,23 @@ impl fmt::Display for Arch {
         }
     }
 }
+
+/// Get the host operating system
+pub fn get_host_os() -> Os {
+    match OS {
+        "macos" | "darwin" => Os::MacOS,
+        "linux" => Os::Linux,
+        "windows" => Os::Windows,
+        _ => panic!("Building for unsupported os target!"),
+    }
+}
+
+/// Get the host architecture
+pub fn get_host_arch() -> Arch {
+    match ARCH {
+        "x86" => Arch::X86, // "x86" is not a valid value for ARCH, but we'll include it for completeness
+        "x64" | "x86_64" => Arch::X64,
+        "arm" | "aarch64" => Arch::Arm64,
+        _ => panic!("Building for unsupported architecture target!"),
+    }
+}

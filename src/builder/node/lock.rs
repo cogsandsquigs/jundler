@@ -1,5 +1,5 @@
+use super::platforms::{Arch, Os};
 use super::Error;
-use crate::builder::platforms::{Arch, Os};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

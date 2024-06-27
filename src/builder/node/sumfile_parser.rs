@@ -23,7 +23,7 @@ pub fn parse_checksum_file(input: &str) -> Result<Vec<(Checksum, NodeExecutableM
     for line in input.lines() {
         match parse_checksum_file_entry(line) {
             Ok((_, entry)) => entries.push(entry),
-            Err(err) => {
+            Err(_err) => {
                 continue;
             }
         }

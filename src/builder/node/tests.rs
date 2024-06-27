@@ -35,24 +35,48 @@ fn create_node_manager() {
 
 /// Test we can download node and calculate checksums
 #[test]
-fn download_and_save_node() {
+fn download_save_unpack_remove_node() {
     let tmp_dir = TempDir::new().unwrap();
     let tmp_path = tmp_dir.path().to_path_buf();
 
     let mut node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
 
     // Download from https://nodejs.org/dist/v22.3.0/node-v22.3.0-linux-x64.tar.gz
+    let target_version = "22.3.0".parse().unwrap();
 
-    let expected_checksum =
-        <[u8; 32]>::from_hex("a6d4fbf4306a883b8e1d235a8a890be84b9d95d2d39b929520bed64da41ce540")
-            .unwrap();
-
-    let path = node_manager
-        .download("22.3.0".parse().unwrap(), Os::Linux, Arch::X64)
+    let (executable_path, archive_path) = node_manager
+        .download(&target_version, Os::Linux, Arch::X64)
         .unwrap();
 
-    // Errors on the unwrap b/c checksums mismatch. This isn't caused by downloading a corrupt file (as it has a proper checksum
-    // when checked with `sha256sum`), so it must be an error reading the file OR computing the checksum.
+    // Check that the exe and archive exists
+    assert!(executable_path.exists());
+    assert!(archive_path.exists());
+
+    // Check that the archive is inside the NodeManager
+    let locked_binary = node_manager
+        .get_locked_node(&target_version, Os::Linux, Arch::X64)
+        .unwrap();
+
+    assert_eq!(locked_binary.path, archive_path);
+    assert!(locked_binary.validate_checksum().unwrap());
+
+    // Check that when we unpack the binary, it's equal to the downloaded binary
+    let unpacked_path = node_manager.unpack_archive(locked_binary).unwrap();
+
+    // Get file contents
+    let unpacked_contents = std::fs::read(unpacked_path).unwrap();
+    let executable_contents = std::fs::read(&executable_path).unwrap();
+
+    assert_eq!(unpacked_contents, executable_contents);
+
+    // Remove the node binary
+    node_manager.remove(&locked_binary.clone()).unwrap();
+
+    // Test the archive doesn't exist
+    assert!(!archive_path.exists());
+    assert!(node_manager
+        .get_locked_node(&target_version, Os::Linux, Arch::X64)
+        .is_none());
 }
 
 /// Test that we can create, save and load a lockfile

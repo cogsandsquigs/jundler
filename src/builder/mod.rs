@@ -5,7 +5,7 @@ mod tests;
 use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
 use anyhow::{Context, Result};
 use log::{debug, warn};
-use node::{Arch, Os};
+use node::{Arch, NodeManager, Os};
 use rand::distributions::{Alphanumeric, DistString};
 use semver::Version;
 use std::fs::{self, File};
@@ -14,22 +14,13 @@ use tempdir::TempDir;
 
 pub struct Builder {
     /// The directory to build the project in.
-    build_dir: PathBuf,
+    working_dir: TempDir,
 
     /// The directory of the project to build.
     original_project_dir: PathBuf,
 
-    /// The current OS.
-    host_os: Os,
-
     /// The version of Node.js to build with.
     node_version: Version,
-
-    /// The OS to build for.
-    node_os: Os,
-
-    /// The architecture to build for.
-    node_arch: Arch,
 
     /// The SEA configuration for the project.
     sea_config: SEAConfig,
@@ -37,11 +28,11 @@ pub struct Builder {
     /// The package configuration for the project.
     package_config: PackageConfig,
 
+    /// The Node.js manager
+    node_manager: NodeManager,
+
     /// Whether or not we are bundling the project.
     bundle: bool,
-
-    /// A possible path to the Node.js binary.
-    custom_node: Option<PathBuf>,
 }
 
 impl Builder {
@@ -50,8 +41,8 @@ impl Builder {
         node_version: Version,
         node_os: Os,
         node_arch: Arch,
+        cache_dir: PathBuf,
         bundle: bool,
-        custom_node: Option<PathBuf>,
     ) -> Result<Self> {
         // Get the configuration
         let (sea_config, package_config) = get_configs(&project_dir)?;
@@ -67,22 +58,19 @@ impl Builder {
         .context("Could not create a temporary directory to build in!")?;
 
         Ok(Self {
-            build_dir: temp_dir.into_path(),
+            working_dir: temp_dir,
             original_project_dir: project_dir,
-            host_os: Os::default(),
             node_version,
-            node_os,
-            node_arch,
             sea_config,
             package_config,
+            node_manager: NodeManager::new(node_os, node_arch, cache_dir)?,
             bundle,
-            custom_node,
         })
     }
 
     /// Builds the Node.js binary with the SEA blob, outputting it in the current directory.
     pub fn build(&mut self) -> Result<()> {
-        debug!("Build in directory: {}", self.build_dir.display());
+        debug!("Build in directory: {}", self.working_dir.path().display());
 
         // Copy the project to the build directory
         self.copy_and_prepare_project()?;
@@ -108,28 +96,23 @@ impl Builder {
             debug!("Bundled!");
         }
 
-        let node_bin = if let Some(custom_node) = &self.custom_node {
-            debug!("Using custom Node.js binary: {}", custom_node.display());
+        // debug!("Downloading Node.js binary...");
 
-            self.use_custom_node(custom_node)?
-        } else {
-            debug!("Downloading Node.js binary...");
+        // // Download the archive
+        // let archive = self.download_node_archive()?;
 
-            // Download the archive
-            let archive = self.download_node_archive()?;
+        // debug!("Downloaded!");
+        // debug!("Extracting Node.js binary...");
 
-            debug!("Downloaded!");
-            debug!("Extracting Node.js binary...");
+        // // Extract the archive
+        // let node_bin = self.extract_node_archive(&archive)?;
 
-            // Extract the archive
-            let node_bin = self.extract_node_archive(&archive)?;
+        // debug!("Extracted!");
 
-            debug!("Extracted!");
+        // Get the node binary
+        let node_bin = self.node_manager.get_target_binary(&self.node_version)?;
 
-            node_bin
-        };
-
-        debug!("Generating SEA blob...");
+        debug!("Generating SEA blob..."); // TODO: Better ui
 
         // Generate the SEA blob
         let sea_blob = self.gen_sea_blob()?;
@@ -143,21 +126,21 @@ impl Builder {
         debug!("Injected!");
 
         // Move the binary to the current directory
-        let (bin_name, app_name) = if self.node_os == Os::Windows {
-            ("node.exe", self.package_config.name.clone() + ".exe")
+        let app_name = if self.node_manager.target_os == Os::Windows {
+            self.package_config.name.clone() + ".exe"
         } else {
-            ("node", self.package_config.name.clone())
+            self.package_config.name.clone()
         };
 
         let app_path = self.original_project_dir.join(app_name);
 
-        fs::copy(self.build_dir.join(bin_name), &app_path)
+        fs::copy(node_bin, &app_path)
             .context("Error moving built binary to current working directory")?;
 
         debug!("Binary moved to: {}", app_path.display());
 
         // Codesign the binary if we're on MacOS
-        match (self.host_os, self.node_os) {
+        match (self.node_manager.host_os, self.node_manager.target_os) {
             (Os::MacOS, Os::MacOS) => {
                 debug!("Codesigning binary for MacOS...");
                 self.macos_codesign(&app_path)?;

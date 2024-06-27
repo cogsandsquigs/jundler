@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use builder::Builder;
 use clap::Parser;
 use cli::Args;
-use std::env;
+use std::{env, fs, path::PathBuf};
 
 fn main() -> Result<()> {
     // Default the log level to info if it's not set.
@@ -31,11 +31,24 @@ fn main() -> Result<()> {
         args.node_version,
         args.os,
         args.arch,
+        get_cache_dir(),
         args.bundle,
-        args.custom_node,
     )?;
 
     builder.build()?;
 
     Ok(())
+}
+
+/// Get the user's cache directory.
+/// TODO: Error handling
+fn get_cache_dir() -> PathBuf {
+    let cache_dir = dirs::cache_dir().unwrap().join("jundler");
+
+    // If the dir doesn't exist, make it
+    if !cache_dir.exists() {
+        fs::create_dir_all(&cache_dir).unwrap();
+    }
+
+    cache_dir
 }

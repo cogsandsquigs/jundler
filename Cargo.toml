@@ -36,12 +36,14 @@
 	sha2    = "^0.10.8"                                        # Hashing + digests
 	tar     = "^0.4.41"                                        # For extracting tarballs
 	zip     = "^2.1.3"                                         # For extracting zip files
+	zstd    = "^0.13.1"                                        # Archiving node binaries
 
 	# Logging 
 	env_logger = "^0.11.3" # For logging things
 	log        = "^0.4.21" # For logging things
 
 	# Misc.
+	dirs     = "5.0.1"  # Getting user's cache directory
 	fs_extra = "^1.3.0" # For copying files
 	hex      = "^0.4.3" # For hex encoding/decoding
 	nom      = "^7.1.3" # Parsing lockfiles

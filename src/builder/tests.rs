@@ -12,8 +12,8 @@ fn test_new_builder() {
         Version::parse("22.3.0").unwrap(),
         Os::Linux,
         Arch::X64,
+        TempDir::new("test").unwrap().into_path(),
         false,
-        None,
     );
 
     // assert!(result.is_ok());
@@ -26,6 +26,7 @@ fn test_new_builder() {
         builder.sea_config.output,
         "the-random-name-for-the-sea-prep-blob.blob"
     );
+    // assert!(builder.builder_dir.exists());
 
     assert_eq!(builder.sea_config.other.len(), 1);
     assert_eq!(

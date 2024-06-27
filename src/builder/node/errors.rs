@@ -1,7 +1,7 @@
 use super::{lock::Checksum, Arch, Os};
 use semver::Version;
+use std::io;
 use std::path::PathBuf;
-use zip::result::ZipError;
 
 /// Any errors that can occur when interacting with the NodeManager
 #[derive(Debug, thiserror::Error)]
@@ -15,7 +15,7 @@ pub enum Error {
     Io {
         /// The source of the error
         #[source]
-        err: std::io::Error,
+        err: io::Error,
 
         /// The path that caused the error
         path: PathBuf,

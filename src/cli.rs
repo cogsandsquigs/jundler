@@ -29,10 +29,6 @@ pub struct Args {
     /// will also bundle the Node.js runtime.
     #[arg(short, long, default_value_t = false)]
     pub bundle: bool,
-
-    /// A path to a custom node binary to use for building the project.
-    #[arg(short, long)]
-    pub custom_node: Option<PathBuf>,
 }
 
 fn current_node_version() -> Version {

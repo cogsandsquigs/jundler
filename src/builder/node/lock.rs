@@ -55,15 +55,20 @@ impl NodeManagerLock {
     }
 
     /// Get an executable with a specific version, arch, and os
-    pub fn find(&self, version: Version, arch: Arch, os: Os) -> Option<&NodeExecutable> {
+    pub fn find(&self, version: &Version, os: Os, arch: Arch) -> Option<&NodeExecutable> {
         self.node_executables.iter().find(|exec| {
-            exec.meta.version == version && exec.meta.arch == arch && exec.meta.os == os
+            exec.meta.version == *version && exec.meta.arch == arch && exec.meta.os == os
         })
     }
 
     /// Given a node executable, insert it into the lockfile
-    pub fn insert(&mut self, node_executable: NodeExecutable) {
+    pub fn add(&mut self, node_executable: NodeExecutable) {
         self.node_executables.push(node_executable);
+    }
+
+    /// Remove a node executable from the lockfile
+    pub fn remove(&mut self, node_executable: &NodeExecutable) {
+        self.node_executables.retain(|exec| exec != node_executable);
     }
 }
 
@@ -93,9 +98,9 @@ impl NodeExecutable {
         })
     }
 
-    /// Validate that the checksum of the file matches against any checksum
-    pub fn validate_checksum_against(&self, checksum: &Checksum) -> bool {
-        self.checksum == *checksum
+    /// Validate that the checksum of the file matches it's stored checksum.
+    pub fn validate_checksum(&self) -> Result<bool, Error> {
+        Ok(self.checksum == calculate_checksum(&self.path)?)
     }
 }
 

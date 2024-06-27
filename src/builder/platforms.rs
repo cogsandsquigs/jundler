@@ -4,7 +4,9 @@ use std::{
     env::consts::{ARCH, OS},
 };
 
-#[derive(clap::ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(clap::ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Os {
     #[clap(alias = "darwin")]
     MacOS,
@@ -33,7 +35,7 @@ impl fmt::Display for Os {
     }
 }
 
-#[derive(clap::ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(clap::ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Arch {
     #[clap(alias = "x64")]
     #[clap(alias = "x86_64")]

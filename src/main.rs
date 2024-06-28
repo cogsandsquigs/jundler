@@ -20,22 +20,25 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let project_dir: std::path::PathBuf = args
-        .project_dir
-        .canonicalize()
-        .context("Invalid project directory!")?
-        .to_path_buf();
+    match args.action {
+        cli::Action::Build {
+            project_dir,
+            node_version,
+            os,
+            arch,
+            bundle,
+        } => {
+            let project_dir: std::path::PathBuf = project_dir
+                .canonicalize()
+                .context("Invalid project directory!")?
+                .to_path_buf();
 
-    let mut builder = Builder::new(
-        project_dir,
-        args.node_version,
-        args.os,
-        args.arch,
-        get_cache_dir(),
-        args.bundle,
-    )?;
+            let mut builder = Builder::new(get_cache_dir())?;
 
-    builder.build()?;
+            builder.build(&project_dir, node_version, os, arch, bundle)?;
+        }
+        cli::Action::Clean => todo!(),
+    };
 
     Ok(())
 }

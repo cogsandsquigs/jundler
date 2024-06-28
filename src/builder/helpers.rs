@@ -1,6 +1,6 @@
-use super::node::Os;
+use super::node::{Arch, Os};
 use super::Builder;
-use crate::js_config::SEAConfig;
+use crate::js_config::{PackageConfig, SEAConfig};
 use anyhow::{anyhow, Context, Result};
 use log::warn;
 use std::fs;
@@ -11,7 +11,12 @@ use std::process::Command;
 // Private helper functions to do steps of the build process
 impl Builder {
     /// Copy the project to the build directory, into a project folder.
-    pub(super) fn copy_and_prepare_project(&self) -> Result<()> {
+    pub(super) fn copy_and_prepare_project(
+        &self,
+        original_project_dir: &Path,
+        target_os: Os,
+        target_arch: Arch,
+    ) -> Result<()> {
         let project_dir = self.working_dir.path().join("project");
 
         // Create the project directory in the build directory
@@ -22,7 +27,7 @@ impl Builder {
 
         // Copy the project to the build directory
         fs_extra::dir::copy(
-            &self.original_project_dir,
+            original_project_dir,
             &project_dir,
             &fs_extra::dir::CopyOptions::new()
                 .content_only(true)
@@ -30,7 +35,7 @@ impl Builder {
         )
         .context(format!(
             "Error copying project from {} to {}",
-            self.original_project_dir.display(),
+            original_project_dir.display(),
             project_dir.display()
         ))?;
 
@@ -38,8 +43,8 @@ impl Builder {
         let npm_install_cmd_output = Command::new("npm")
             .current_dir(&self.working_dir.path().join("project")) // Run the command in the project directory
             .arg("install")
-            .arg(format!("--target_platform={}", self.node_manager.target_os))
-            .arg(format!("--target_arch={}", self.node_manager.target_arch))
+            .arg(format!("--target_platform={}", target_os))
+            .arg(format!("--target_arch={}", target_arch))
             .output()
             .context("Error running npm install")?;
 
@@ -55,18 +60,17 @@ impl Builder {
     }
 
     /// Bundle the project using `esbuild` if desired by the user.
-    pub(super) fn bundle_project(&mut self) -> Result<()> {
+    pub(super) fn bundle_project(
+        &mut self,
+        package_config: PackageConfig,
+        sea_config: &mut SEAConfig,
+    ) -> Result<()> {
         // Run the esbuild command
         let esbuild_cmd_output = Command::new("npx")
             .current_dir(&self.working_dir.path().join("project")) // Run the command in the project directory
             .arg("esbuild")
             // Use the main entrypoint from the package.json file, or the default from the sea-config.json file
-            .arg(
-                self.package_config
-                    .main
-                    .as_ref()
-                    .unwrap_or(&self.sea_config.main),
-            )
+            .arg(package_config.main.as_ref().unwrap_or(&sea_config.main))
             .arg("--bundle")
             .arg("--platform=node") // Bundle for Node.js
             .arg("--outfile=bundled.js") // Output to `bundled.js` in the build directory
@@ -84,10 +88,10 @@ impl Builder {
         // Rewrite `sea-config.json` to point to the bundled file
         let new_sea_config = SEAConfig {
             main: "bundled.js".to_string(),
-            ..self.sea_config.clone()
+            ..sea_config.clone()
         };
 
-        self.sea_config = new_sea_config;
+        *sea_config = new_sea_config;
 
         // Write the new `sea-config.json` to the project directory
         let sea_config_path = self
@@ -99,7 +103,7 @@ impl Builder {
         let sea_config_file =
             File::create(&sea_config_path).context("Error creating new `sea-config.json` file")?;
 
-        serde_json::to_writer_pretty(sea_config_file, &self.sea_config).context(format!(
+        serde_json::to_writer_pretty(sea_config_file, sea_config).context(format!(
             "Error writing new `sea-config.json` file to {}",
             sea_config_path.display()
         ))?;
@@ -108,7 +112,11 @@ impl Builder {
     }
 
     /// Generate the SEA blob for the Node.js binary.
-    pub(super) fn gen_sea_blob(&self, host_node_bin: &Path) -> Result<PathBuf> {
+    pub(super) fn gen_sea_blob(
+        &self,
+        host_node_bin: &Path,
+        sea_config: SEAConfig,
+    ) -> Result<PathBuf> {
         // Get the path to `sea-config.json` from `{build-dir}/project/sea-config.json` because we want to use the
         // configuration that points to the bundled file IF the project was bundled (which is modified in the project
         // directory). Otherwise, this is the same as the original `sea-config.json` file.
@@ -137,9 +145,9 @@ impl Builder {
             .working_dir
             .path()
             .join("project") // Expect the sea blob to be in the project directory
-            .join(&self.sea_config.output);
+            .join(&sea_config.output);
 
-        let new_sea_blob_path = self.working_dir.path().join(&self.sea_config.output);
+        let new_sea_blob_path = self.working_dir.path().join(&sea_config.output);
 
         // Move the sea blob to the build directory
         fs::rename(sea_blob, &new_sea_blob_path)
@@ -149,7 +157,7 @@ impl Builder {
     }
 
     /// Injects the app into the node binary.
-    pub(super) fn inject_app(&self, node_bin: &Path, sea_blob: &Path) -> Result<()> {
+    pub(super) fn inject_app(&self, node_bin: &Path, sea_blob: &Path, target_os: Os) -> Result<()> {
         // Run the postject command
         let postject_cmd_output = Command::new("npx")
             .current_dir(&self.working_dir)
@@ -160,12 +168,12 @@ impl Builder {
             .arg(sea_blob)
             .arg("--sentinel-fuse")
             .arg("NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2")
-            .arg(if self.node_manager.target_os == Os::MacOS {
+            .arg(if target_os == Os::MacOS {
                 "--macho-segment-name"
             } else {
                 ""
             })
-            .arg(if self.node_manager.target_os == Os::MacOS {
+            .arg(if target_os == Os::MacOS {
                 "NODE_SEA"
             } else {
                 ""

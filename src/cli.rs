@@ -1,5 +1,5 @@
 use crate::builder::node::{Arch, Os};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use semver::Version;
 use std::path::PathBuf;
 
@@ -7,28 +7,42 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    /// The path to the directory where the project to build is located. Note that the output binary will be
-    /// placed in this directory as well.
-    #[clap(default_value = ".")]
-    pub project_dir: PathBuf,
+    /// The subcommand to run.
+    #[clap(subcommand)]
+    pub action: Action,
+}
 
-    /// The version of Node.js you want to bundle with your application. This MUST match your installed/currently
-    /// used Node.js version. Note that there should not be any "v" prefix.
-    #[arg(short, long, default_value_t = current_node_version())]
-    pub node_version: Version,
+/// An enum of actions to perform.
+#[derive(Subcommand, Debug)]
+pub enum Action {
+    /// Build the project.
+    Build {
+        /// The path to the directory where the project to build is located. Note that the output binary will be
+        /// placed in this directory as well.
+        #[clap(default_value = ".")]
+        project_dir: PathBuf,
 
-    /// The platform you're building for.
-    #[arg(short, long, default_value_t = Os::default())]
-    pub os: Os,
+        /// The version of Node.js you want to bundle with your application. This MUST match your installed/currently
+        /// used Node.js version. Note that there should not be any "v" prefix.
+        #[arg(short, long, default_value_t = current_node_version())]
+        node_version: Version,
 
-    /// The architecture you're building for.
-    #[arg(short, long, default_value_t = Arch::default())]
-    pub arch: Arch,
+        /// The platform you're building for.
+        #[arg(short, long, default_value_t = Os::default())]
+        os: Os,
 
-    /// Bundle the project into a single JS file instead of just compiling the `sea-config.json` main entrypoint. This
-    /// will also bundle the Node.js runtime.
-    #[arg(short, long, default_value_t = false)]
-    pub bundle: bool,
+        /// The architecture you're building for.
+        #[arg(short, long, default_value_t = Arch::default())]
+        arch: Arch,
+
+        /// Bundle the project into a single JS file instead of just compiling the `sea-config.json` main entrypoint. This
+        /// will also bundle the Node.js runtime.
+        #[arg(short, long, default_value_t = false)]
+        bundle: bool,
+    },
+
+    /// Clean the project.
+    Clean,
 }
 
 fn current_node_version() -> Version {

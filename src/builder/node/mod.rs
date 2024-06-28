@@ -25,18 +25,6 @@ use tempdir::TempDir;
 use zstd::Encoder;
 
 pub struct NodeManager {
-    /// The host operating system
-    pub host_os: Os,
-
-    /// The host architecture
-    pub host_arch: Arch,
-
-    /// The target operating system
-    pub target_arch: Arch,
-
-    /// The target architecture
-    pub target_os: Os,
-
     /// The directory where different node versions are stored.
     node_cache_dir: PathBuf,
 
@@ -51,7 +39,7 @@ pub struct NodeManager {
 
 impl NodeManager {
     /// Creates a new NodeManager. We expect that `node_cache_dir` exists and is writable.
-    pub fn new(target_os: Os, target_arch: Arch, node_cache_dir: PathBuf) -> Result<Self, Error> {
+    pub fn new(node_cache_dir: PathBuf) -> Result<Self, Error> {
         let lockfile_path = node_cache_dir.join("jundler.lockb");
 
         let lockfile = if lockfile_path.exists() {
@@ -77,42 +65,19 @@ impl NodeManager {
         })?;
 
         Ok(Self {
-            host_os: get_host_os(),
-            host_arch: get_host_arch(),
-            target_os,
-            target_arch,
+            // host_os: get_host_os(),
+            // host_arch: get_host_arch(),
+            // target_os,
+            // target_arch,
             node_cache_dir,
             lockfile,
             tmp_dir,
         })
     }
 
-    /// Downloads a host binary if it doesn't exist, and returns the path to the binary.
-    pub fn get_host_binary(&mut self, version: &Version) -> Result<PathBuf, Error> {
-        let binary = self.lockfile.find(version, self.host_os, self.host_arch);
-
-        // Return it if it exists
-        let binary_path = if let Some(host_archive) = binary {
-            self.unpack_archive(host_archive)?
-        }
-        // If it doesn't exist, download it
-        else {
-            self.download(version, self.host_os, self.host_arch)?.0
-        };
-
-        // Make the binary executable on Unix-based systems
-        if cfg!(unix) {
-            make_executable(&binary_path)?
-        };
-
-        Ok(binary_path)
-    }
-
     /// Downloads a target binary if it doesn't exist, and returns the path to the binary.
-    pub fn get_target_binary(&mut self, version: &Version) -> Result<PathBuf, Error> {
-        let binary = self
-            .lockfile
-            .find(version, self.target_os, self.target_arch);
+    pub fn get_binary(&mut self, version: &Version, os: Os, arch: Arch) -> Result<PathBuf, Error> {
+        let binary = self.lockfile.find(version, os, arch);
 
         // Return it if it exists
         let binary_path = if let Some(host_archive) = binary {
@@ -120,7 +85,7 @@ impl NodeManager {
         }
         // If it doesn't exist, download it
         else {
-            self.download(version, self.target_os, self.target_arch)?.0
+            self.download(version, os, arch)?.0
         };
 
         // Make the binary executable on Unix-based systems

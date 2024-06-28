@@ -12,12 +12,8 @@ fn create_node_manager() {
     let tmp_dir = TempDir::new().unwrap();
     let tmp_path = tmp_dir.path().to_path_buf();
 
-    let mut node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
+    let mut node_manager = NodeManager::new(tmp_path.clone()).unwrap();
 
-    assert_eq!(node_manager.host_os, get_host_os());
-    assert_eq!(node_manager.host_arch, get_host_arch());
-    assert_eq!(node_manager.target_os, Os::Linux);
-    assert_eq!(node_manager.target_arch, Arch::X64);
     assert_eq!(node_manager.node_cache_dir, tmp_path);
 
     let expected_lockfile = NodeManagerLock::new(Vec::new(), tmp_path.join("jundler.lockb"));
@@ -39,7 +35,7 @@ fn download_save_unpack_remove_node() {
     let tmp_dir = TempDir::new().unwrap();
     let tmp_path = tmp_dir.path().to_path_buf();
 
-    let mut node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
+    let mut node_manager = NodeManager::new(tmp_path.clone()).unwrap();
 
     // Download from https://nodejs.org/dist/v22.3.0/node-v22.3.0-linux-x64.tar.gz
     let target_version = "22.3.0".parse().unwrap();
@@ -87,7 +83,7 @@ fn clear_cache() {
     let tmp_dir = TempDir::new().unwrap();
     let tmp_path = tmp_dir.path().to_path_buf();
 
-    let mut node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
+    let mut node_manager = NodeManager::new(tmp_path.clone()).unwrap();
 
     // Download from https://nodejs.org/dist/v22.3.0/node-v22.3.0-linux-x64.tar.gz
     let target_version = "22.3.0".parse().unwrap();

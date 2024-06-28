@@ -85,8 +85,8 @@ Because it sounded funny and I liked it. :p
 -   [x] Auto-download of Node.js host runtime to make the process work w/o Node.js installed (still requires `npm`/`npx`)
 -   [x] Cross-compilation
 -   [x] Codesigning for macOS
--   [ ] Codesigning for Windows
--   [ ] Redesign CLI + allow for cleaning cache dir.
+-   [x] Redesign CLI + allow for cleaning cache dir.
+-   [-] Codesigning for Windows
 -   [ ] Better error handling
 -   [ ] Spinners/progress bars + better UI
 -   [ ] Integration testing on test projects

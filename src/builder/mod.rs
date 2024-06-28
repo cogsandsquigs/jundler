@@ -53,7 +53,7 @@ impl Builder {
         bundle: bool,
     ) -> Result<()> {
         // Get the configuration
-        let (mut sea_config, package_config) = get_configs(&project_dir)?;
+        let (mut sea_config, package_config) = get_configs(project_dir)?;
         let (host_os, host_arch) = (get_host_os(), get_host_arch());
 
         debug!("Build in directory: {}", self.working_dir.path().display());
@@ -75,7 +75,7 @@ impl Builder {
         {
             debug!("Bundling project with esbuild...");
 
-            self.bundle_project(package_config.clone(), &mut sea_config.clone())?;
+            self.bundle_project(&package_config, &mut sea_config)?;
 
             debug!("Bundled!");
         }

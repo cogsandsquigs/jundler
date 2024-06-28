@@ -1,7 +1,5 @@
 #![cfg(test)]
 
-use serde_json::Value;
-
 use super::*;
 
 /// Test that we were able to get a new a `Builder` instance from a project.

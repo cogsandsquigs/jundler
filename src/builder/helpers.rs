@@ -62,7 +62,7 @@ impl Builder {
     /// Bundle the project using `esbuild` if desired by the user.
     pub(super) fn bundle_project(
         &mut self,
-        package_config: PackageConfig,
+        package_config: &PackageConfig,
         sea_config: &mut SEAConfig,
     ) -> Result<()> {
         // Run the esbuild command

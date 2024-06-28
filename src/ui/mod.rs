@@ -1,9 +1,12 @@
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use std::time::Duration;
 
-const SPINNER_FRAMES: &[&str] = &["◜", "◠", "◝", "◞", "◡", "◟"]; // &["📪", "📫", "📬", "📭"];
+const SPINNER_FRAMES: &[&str] = &[
+    "⠁", "⠂", "⠄", "⡀", "⡈", "⡐", "⡠", "⣀", "⣁", "⣂", "⣄", "⣌", "⣔", "⣤", "⣥", "⣦", "⣮", "⣶", "⣷",
+    "⣿", "⡿", "⠿", "⢟", "⠟", "⡛", "⠛", "⠫", "⢋", "⠋", "⠍", "⡉", "⠉", "⠑", "⠡", "⢁",
+]; // &["◜", "◠", "◝", "◞", "◡", "◟"];
 
-const SPINNER_FRAME_DURATION: Duration = Duration::from_millis(120);
+const SPINNER_FRAME_DURATION: Duration = Duration::from_millis(80);
 
 #[derive(Clone, Debug)]
 pub struct Interface {
@@ -88,7 +91,7 @@ impl Spinner {
             ProgressStyle::default_spinner()
                 .template("{spinner:.green} {msg}")
                 .expect("This should not fail!")
-                .tick_chars("○○"),
+                .tick_chars("⣿⣿"),
         );
         self.spinner.finish();
     }

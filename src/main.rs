@@ -30,7 +30,7 @@ fn main() -> Result<()> {
 
     spinner.start();
 
-    sleep(Duration::from_secs(2));
+    sleep(Duration::from_secs(5));
 
     spinner.close();
 

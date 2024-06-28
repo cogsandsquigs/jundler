@@ -1,12 +1,14 @@
 mod builder;
 mod cli;
 mod js_config;
+mod ui;
 
 use anyhow::{Context, Result};
 use builder::Builder;
 use clap::Parser;
 use cli::Args;
-use std::{env, fs, path::PathBuf};
+use std::{env, fs, path::PathBuf, thread::sleep, time::Duration};
+use ui::Interface;
 
 fn main() -> Result<()> {
     // Default the log level to info if it's not set.
@@ -21,6 +23,18 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let mut builder = Builder::new(get_cache_dir())?;
+
+    let mut interface = Interface::new();
+
+    let mut spinner = interface.spawn_spinner("Building project...".to_string());
+
+    spinner.start();
+
+    sleep(Duration::from_secs(2));
+
+    spinner.close();
+
+    todo!();
 
     match args.action {
         cli::Action::Build {

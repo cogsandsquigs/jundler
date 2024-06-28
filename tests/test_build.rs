@@ -6,17 +6,12 @@ use std::process::Command;
 // Function to generate lit runner for a fixture directory. Why do this instead of just
 // searching for all shell files in the directory? Because we want to be able to only test some
 // of the files in the directory, and we want to be able to pass in constants to the tests.
-fn test_runner(
-    test_name: &str,
-    jundler_args: &[&str],
-    expected_stdout: &str,
-    expected_stderr: &str,
-) {
+fn runner(name: &str, jundler_args: &[&str], expected_stdout: &str, expected_stderr: &str) {
     // Create tmp dir for test
     let tmp_dir = TempDir::new().unwrap();
 
     // Copy the fixture directory to the tmp dir
-    let fixture_path = PathBuf::from("tests/fixtures").join(test_name);
+    let fixture_path = PathBuf::from("tests/fixtures").join(name);
     tmp_dir.copy_from(fixture_path, &["**/*"]).unwrap();
 
     // Set the RUST_LOG environment variable to debug so we can see the output of the build process.
@@ -41,12 +36,10 @@ fn test_runner(
     assert!(result.status.success());
 
     // Run the generated file
-    let result = Command::new(tmp_dir.path().join(test_name))
-        .output()
-        .unwrap();
+    let result = Command::new(tmp_dir.path().join(name)).output().unwrap();
 
     // Print outputs for debugging
-    println!("GENERATED BINARY ({}) OUTPUT", test_name);
+    println!("GENERATED BINARY ({}) OUTPUT", name);
     println!("----------------------------------------------------");
     println!("status: {}", result.status);
     println!("stdout:\n{}", String::from_utf8_lossy(&result.stdout));
@@ -58,30 +51,30 @@ fn test_runner(
 }
 
 #[test]
-fn test_simple() {
-    test_runner("simple", &[], "Hello, world!", "");
+fn simple() {
+    runner("simple", &[], "Hello, world!", "");
 }
 
 #[test]
-fn test_simple_bundle() {
-    test_runner("simple-bundle", &[], "Hello, world!\n1 + 2 = 3", "");
+fn simple_bundle() {
+    runner("simple-bundle", &[], "Hello, world!\n1 + 2 = 3", "");
 }
 
 #[test]
-fn test_simple_ts() {
-    test_runner("simple-ts", &[], "Hello, world!", "");
+fn simple_ts() {
+    runner("simple-ts", &[], "Hello, world!", "");
 }
 
 // NOTE: This requires a binary of `node` (version 22.3.0) to be installed in `tests/fixtures/custom-node/node`
 #[ignore]
 #[test]
-fn test_custom_node() {
+fn custom_node() {
     // Get path to node binary stored in "tests/fixtures/custom-node/node"
     let node_path = PathBuf::from("tests/fixtures/custom-node/node")
         .canonicalize()
         .unwrap();
 
-    test_runner(
+    runner(
         "custom-node",
         &["-n", "22.3.0", "--custom-node", node_path.to_str().unwrap()],
         "Hello, world!\nThis binary is currently running node version: v22.3.0",

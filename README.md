@@ -16,8 +16,8 @@ For more features, see the [FAQ](#faq).
 
 ## Requirements
 
--   An installation of `node`, `npm` and `npx`. Note that the version of `node` you're using must match the version you intend on bundling with Jundler. You can check your version of `node` by running `node -v` in your terminal.
--   **OPTIONAL:** `cargo` to install from `crates.io` directly instead of using the binaries.
+-   A working installation of `npm`. Note that you do _not_ need to have `node` installed, as Jundler will download a local copy matching your OS, architecture, and desired version.
+-   `cargo` to install from `crates.io`.
 
 ## Usage
 
@@ -82,8 +82,12 @@ Because it sounded funny and I liked it. :p
 
 -   [x] Auto-detect TS / Modules and bundle accordingly
 -   [x] Unit test separate build steps
--   [ ] Use locally installed Node.js runtime for bundling when version, os, and arch match
--   [ ] Integration testing on test projects
--   [ ] Spinners/progress bars + better UI
+-   [x] Auto-download of Node.js host runtime to make the process work w/o Node.js installed (still requires `npm`/`npx`)
+-   [x] Cross-compilation
+-   [x] Codesigning for macOS
+-   [ ] Codesigning for Windows
+-   [ ] Redesign CLI + allow for cleaning cache dir.
 -   [ ] Better error handling
--   [ ] Auto-download of Node.js host runtime to make the process work w/o Node.js installed
+-   [ ] Spinners/progress bars + better UI
+-   [ ] Integration testing on test projects
+-   [ ] Use locally installed Node.js runtime for bundling when version, os, and arch match

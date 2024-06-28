@@ -16,7 +16,7 @@ pub struct NodeManagerLock {
 
     /// A path to the lockfile. This is not (de)serialized
     #[serde(skip)]
-    lockfile_path: PathBuf,
+    pub(super) lockfile_path: PathBuf,
 }
 
 impl NodeManagerLock {

@@ -54,7 +54,8 @@ fn download_save_unpack_remove_node() {
 
     // Check that the archive is inside the NodeManager
     let locked_binary = node_manager
-        .get_locked_node(&target_version, Os::Linux, Arch::X64)
+        .lockfile
+        .find(&target_version, Os::Linux, Arch::X64)
         .unwrap();
 
     assert_eq!(locked_binary.path, archive_path);
@@ -75,8 +76,36 @@ fn download_save_unpack_remove_node() {
     // Test the archive doesn't exist
     assert!(!archive_path.exists());
     assert!(node_manager
-        .get_locked_node(&target_version, Os::Linux, Arch::X64)
+        .lockfile
+        .find(&target_version, Os::Linux, Arch::X64)
         .is_none());
+}
+
+/// Test we can clean the cache
+#[test]
+fn clear_cache() {
+    let tmp_dir = TempDir::new().unwrap();
+    let tmp_path = tmp_dir.path().to_path_buf();
+
+    let mut node_manager = NodeManager::new(Os::Linux, Arch::X64, tmp_path.clone()).unwrap();
+
+    // Download from https://nodejs.org/dist/v22.3.0/node-v22.3.0-linux-x64.tar.gz
+    let target_version = "22.3.0".parse().unwrap();
+
+    let (executable_path, archive_path) = node_manager
+        .download(&target_version, Os::Linux, Arch::X64)
+        .unwrap();
+
+    // Check that the exe and archive exists
+    assert!(executable_path.exists());
+    assert!(archive_path.exists());
+
+    // Clear the cache
+    node_manager.clean_cache().unwrap();
+
+    // Check that the archive doesn't exist, but the lockfile does
+    assert!(!archive_path.exists());
+    assert!(node_manager.lockfile.lockfile_path.exists());
 }
 
 /// Test that we can create, save and load a lockfile

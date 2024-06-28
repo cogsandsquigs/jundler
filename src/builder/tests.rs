@@ -6,7 +6,7 @@ use super::*;
 
 /// Test that we were able to get a new a `Builder` instance from a project.
 #[test]
-fn test_new_builder() {
+fn new_builder() {
     let result = Builder::new(
         PathBuf::from("tests/fixtures/simple"),
         Version::parse("22.3.0").unwrap(),

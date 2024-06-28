@@ -87,16 +87,6 @@ impl NodeManager {
         })
     }
 
-    /// Gets the locked information about a node executable based on version, os, and arch.
-    pub fn get_locked_node(
-        &self,
-        version: &Version,
-        os: Os,
-        arch: Arch,
-    ) -> Option<&NodeExecutable> {
-        self.lockfile.find(version, os, arch)
-    }
-
     /// Downloads a host binary if it doesn't exist, and returns the path to the binary.
     pub fn get_host_binary(&mut self, version: &Version) -> Result<PathBuf, Error> {
         let binary = self.lockfile.find(version, self.host_os, self.host_arch);
@@ -157,6 +147,31 @@ impl NodeManager {
             path: path.clone(),
             action: "deleting node binary archive at".to_string(),
         })?;
+
+        Ok(())
+    }
+
+    /// Cleans the cache directory by removing all node binaries and clearing the lockfile.
+    pub fn clean_cache(&mut self) -> Result<(), Error> {
+        // First, clean the lockfile by removing all entries.
+        self.lockfile.node_executables.clear();
+
+        // Delete the entire cache directory
+        fs::remove_dir_all(&self.node_cache_dir).map_err(|err| Error::Io {
+            err,
+            path: self.node_cache_dir.clone(),
+            action: "deleting node cache directory at".to_string(),
+        })?;
+
+        // Recreate the cache directory
+        fs::create_dir_all(&self.node_cache_dir).map_err(|err| Error::Io {
+            err,
+            path: self.node_cache_dir.clone(),
+            action: "recreating node cache directory at".to_string(),
+        })?;
+
+        // Save the lockfile
+        self.lockfile.save()?;
 
         Ok(())
     }

@@ -20,6 +20,8 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
+    let mut builder = Builder::new(get_cache_dir())?;
+
     match args.action {
         cli::Action::Build {
             project_dir,
@@ -33,11 +35,9 @@ fn main() -> Result<()> {
                 .context("Invalid project directory!")?
                 .to_path_buf();
 
-            let mut builder = Builder::new(get_cache_dir())?;
-
             builder.build(&project_dir, node_version, os, arch, bundle)?;
         }
-        cli::Action::Clean => todo!(),
+        cli::Action::Clean => builder.clean_cache()?,
     };
 
     Ok(())

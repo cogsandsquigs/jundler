@@ -26,13 +26,21 @@ fn main() -> Result<()> {
 
     let mut interface = Interface::new();
 
-    let mut spinner = interface.spawn_spinner("Building project...".to_string());
+    let mut spinner_1 = interface.spawn_spinner("Building project".to_string());
 
-    spinner.start();
+    spinner_1.start();
+
+    sleep(Duration::from_secs(2));
+
+    spinner_1.close();
+
+    let mut spinner_2 = interface.spawn_spinner("Need to clean project".to_string());
+
+    spinner_2.start();
 
     sleep(Duration::from_secs(5));
 
-    spinner.close();
+    spinner_2.close();
 
     todo!();
 

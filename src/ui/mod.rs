@@ -1,5 +1,5 @@
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use std::time::Duration;
+use std::{cell::RefCell, rc::Rc, time::Duration};
 
 const SPINNER_FRAMES: &[&str] = &[
     "⠁", "⠂", "⠄", "⡀", "⡈", "⡐", "⡠", "⣀", "⣁", "⣂", "⣄", "⣌", "⣔", "⣤", "⣥", "⣦", "⣮", "⣶", "⣷",
@@ -11,33 +11,68 @@ const SPINNER_FRAME_DURATION: Duration = Duration::from_millis(80);
 #[derive(Clone, Debug)]
 pub struct Interface {
     /// The multi-progress bar.
-    multi_progress: MultiProgress,
+    spinners: Vec<Spinner>,
+
+    /// The largest spinner message length.
+    max_msg_len: usize,
 }
 
 impl Interface {
     /// Creates a new interface.
     pub fn new() -> Interface {
         Interface {
-            multi_progress: MultiProgress::new(),
+            spinners: vec![],
+            max_msg_len: 0,
         }
     }
 
     /// Spawns a new spinner. Returns a handle to the spinner, which can be used to update the spinner.
     pub fn spawn_spinner(&mut self, message: String) -> Spinner {
-        let spinner = ProgressBar::new_spinner()
-            .with_message(message)
-            .with_style(ProgressStyle::default_spinner().tick_strings(SPINNER_FRAMES));
+        // the prev. max message length.
+        let prev_max_msg_len = self.max_msg_len;
 
-        let spinner = self.multi_progress.add(spinner.clone());
+        // Update the max message length.
+        self.max_msg_len = self.max_msg_len.max(message.len());
 
-        Spinner::new(spinner)
+        // ONLY if the new message length is greater than the previous max message length.
+        if prev_max_msg_len != self.max_msg_len {
+            // Iterate over all previous spinners, adjusting their lengths according to the new max message length.
+            for spinner in self.spinners.iter_mut() {
+                let curr_msg_len = spinner.spinner.borrow().message().len();
+
+                let style = ProgressStyle::default_spinner()
+                    .template(&get_template(
+                        "{spinner:.blue}",
+                        self.max_msg_len - curr_msg_len + 3,
+                    ))
+                    .expect("This should not fail!")
+                    .tick_strings(SPINNER_FRAMES);
+
+                spinner.set_style(style);
+
+                spinner.spinner.borrow_mut().tick();
+            }
+        }
+
+        let spinner = Spinner::new(
+            ProgressBar::new_spinner().with_message(message).with_style(
+                ProgressStyle::default_spinner()
+                    .template(&get_template("{spinner:.blue}", 3))
+                    .expect("This should not fail!")
+                    .tick_strings(SPINNER_FRAMES),
+            ),
+        );
+
+        self.spinners.push(spinner.clone());
+
+        spinner
     }
 }
 
 /// A wrapper around a progress bar.
 #[derive(Clone, Debug)]
 pub struct Spinner {
-    spinner: ProgressBar,
+    spinner: Rc<RefCell<ProgressBar>>,
     // pre_msg_pad: String,
     // post_msg_elipses: usize,
     // current: usize,
@@ -77,23 +112,34 @@ impl Spinner {
     //     }
 
     pub fn new(spinner: ProgressBar) -> Spinner {
-        Spinner { spinner }
+        Spinner {
+            spinner: Rc::new(RefCell::new(spinner)),
+        }
     }
 
     /// Starts the spinner. Note that the spinner does not appear until the first tick.
     pub fn start(&mut self) {
-        self.spinner.enable_steady_tick(SPINNER_FRAME_DURATION);
+        self.spinner
+            .borrow_mut()
+            .enable_steady_tick(SPINNER_FRAME_DURATION);
     }
 
     /// Closes the spinner.
     pub fn close(self) {
-        self.spinner.set_style(
+        let raw_spinner = self.spinner.borrow();
+
+        raw_spinner.set_style(
             ProgressStyle::default_spinner()
-                .template("{spinner:.green} {msg}")
+                .template(&get_template("✅", 3))
                 .expect("This should not fail!")
-                .tick_chars("⣿⣿"),
+                .tick_strings(SPINNER_FRAMES),
         );
-        self.spinner.finish();
+
+        raw_spinner.finish();
+    }
+
+    fn set_style(&mut self, style: ProgressStyle) {
+        self.spinner.borrow_mut().set_style(style);
     }
 
     //     /// Closes the spinner.
@@ -135,3 +181,10 @@ impl Spinner {
 //         ending,
 //     )
 // }
+
+fn get_template(ending: &str, num_dots: usize) -> String {
+    format!(
+        "{{msg}} {dots} {ending}",
+        dots = console::style("·".repeat(num_dots)).dim(),
+    )
+}

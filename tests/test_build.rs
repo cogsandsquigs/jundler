@@ -21,6 +21,7 @@ fn runner(name: &str, jundler_args: &[&str], expected_stdout: &str, expected_std
     let result = Command::new("cargo")
         .arg("run")
         .arg("--")
+        .arg("build")
         .arg(tmp_dir.path())
         .args(jundler_args)
         .output()

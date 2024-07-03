@@ -7,8 +7,7 @@ use anyhow::{Context, Result};
 use builder::Builder;
 use clap::Parser;
 use cli::Args;
-use std::{env, fs, path::PathBuf, thread::sleep, time::Duration};
-use ui::Interface;
+use std::{env, fs, path::PathBuf};
 
 fn main() -> Result<()> {
     // Default the log level to info if it's not set.
@@ -23,26 +22,6 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let mut builder = Builder::new(get_cache_dir())?;
-
-    let mut interface = Interface::new();
-
-    let mut spinner_1 = interface.spawn_spinner("Building project".to_string());
-
-    spinner_1.start();
-
-    sleep(Duration::from_secs(2));
-
-    spinner_1.close();
-
-    let mut spinner_2 = interface.spawn_spinner("Need to clean project".to_string());
-
-    spinner_2.start();
-
-    sleep(Duration::from_secs(5));
-
-    spinner_2.close();
-
-    todo!();
 
     match args.action {
         cli::Action::Build {

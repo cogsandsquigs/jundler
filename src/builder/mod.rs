@@ -3,7 +3,12 @@ pub mod node;
 mod tests;
 
 use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
-use anyhow::{Context, Result};
+use crate::ui::messages::{
+    BUNDLE_PROJ_MSG, CLEAN_CACHE_MSG, COPY_PROJ_MSG, GEN_SEA_BLOB_MSG, HOST_NODE_MSG,
+    INJECT_APP_MSG, MACOS_CODESIGN_MSG, MAX_MSG_LEN, TARGET_NODE_MSG, WINDOWS_CODESIGN_MSG,
+};
+use crate::ui::Interface;
+use anyhow::{Context, Ok, Result};
 use log::{debug, warn};
 use node::{get_host_arch, get_host_os, Arch, NodeManager, Os};
 use rand::distributions::{Alphanumeric, DistString};
@@ -18,6 +23,9 @@ pub struct Builder {
 
     /// The Node.js manager
     node_manager: NodeManager,
+
+    /// The interface to UI
+    interface: Interface,
 }
 
 impl Builder {
@@ -35,12 +43,19 @@ impl Builder {
         Ok(Self {
             working_dir: temp_dir,
             node_manager: NodeManager::new(cache_dir)?,
+            interface: Interface::new(MAX_MSG_LEN),
         })
     }
 
     /// Cleans the cache directory of the Node.js manager.
     pub fn clean_cache(&mut self) -> Result<()> {
-        Ok(self.node_manager.clean_cache()?)
+        let spinner = self.interface.spawn_spinner(CLEAN_CACHE_MSG);
+
+        self.node_manager.clean_cache()?;
+
+        spinner.close();
+
+        Ok(())
     }
 
     /// Builds the Node.js binary with the SEA blob, outputting it in the current directory.
@@ -58,8 +73,12 @@ impl Builder {
 
         debug!("Build in directory: {}", self.working_dir.path().display());
 
+        let spinner = self.interface.spawn_spinner(COPY_PROJ_MSG);
+
         // Copy the project to the build directory
         self.copy_and_prepare_project(project_dir, target_os, target_arch)?;
+
+        spinner.close();
 
         // Bundle the project if the user wants to, or if the project is a module or TypeScript project
         if bundle
@@ -73,46 +92,42 @@ impl Builder {
                 .as_ref()
                 .is_some_and(|m| m.ends_with(".ts"))
         {
-            debug!("Bundling project with esbuild...");
+            let spinner = self.interface.spawn_spinner(BUNDLE_PROJ_MSG);
 
             self.bundle_project(&package_config, &mut sea_config)?;
 
-            debug!("Bundled!");
+            spinner.close();
         }
 
-        // debug!("Downloading Node.js binary...");
+        let spinner = self.interface.spawn_spinner(TARGET_NODE_MSG);
 
-        // // Download the archive
-        // let archive = self.download_node_archive()?;
-
-        // debug!("Downloaded!");
-        // debug!("Extracting Node.js binary...");
-
-        // // Extract the archive
-        // let node_bin = self.extract_node_archive(&archive)?;
-
-        // debug!("Extracted!");
-
-        // Get the node binary
         let target_node_bin =
             self.node_manager
                 .get_binary(&node_version, target_os, target_arch)?;
+
+        spinner.close();
+
+        let spinner = self.interface.spawn_spinner(HOST_NODE_MSG);
+
         let host_node_bin = self
             .node_manager
             .get_binary(&node_version, host_os, host_arch)?;
 
-        debug!("Generating SEA blob..."); // TODO: Better ui
+        spinner.close();
+
+        let spinner = self.interface.spawn_spinner(GEN_SEA_BLOB_MSG);
 
         // Generate the SEA blob
         let sea_blob = self.gen_sea_blob(&host_node_bin, sea_config)?;
 
-        debug!("SEA blob generated!");
-        debug!("Injecting app into Node.js binary...");
+        spinner.close();
+
+        let spinner = self.interface.spawn_spinner(INJECT_APP_MSG);
 
         // Inject the app into the node binary
         self.inject_app(&target_node_bin, &sea_blob, target_os)?;
 
-        debug!("Injected!");
+        spinner.close();
 
         // Move the binary to the current directory
         let app_name = if target_os == Os::Windows {
@@ -131,24 +146,26 @@ impl Builder {
         // Codesign the binary if we're on MacOS
         match (host_os, target_os) {
             (Os::MacOS, Os::MacOS) => {
-                debug!("Codesigning binary for MacOS...");
+                let spinner = self.interface.spawn_spinner(MACOS_CODESIGN_MSG);
                 self.macos_codesign(&app_path)?;
-                debug!("Signed!");
+                spinner.close();
             }
 
             (_, Os::MacOS) => {
+                // TODO: Better UI for warnings
                 warn!("Warning: Not codesigning the binary because the host OS is not MacOS.");
                 warn!("This will cause an error when running the binary on MacOS.");
                 warn!("Please codesign the binary manually before distributing or running it.");
             }
 
             (Os::Windows, Os::Windows) => {
-                debug!("Signing binary for Windows...");
+                let spinner = self.interface.spawn_spinner(WINDOWS_CODESIGN_MSG);
                 self.windows_sign(&app_path)?;
-                debug!("Signed!");
+                spinner.close();
             }
 
             (_, Os::Windows) => {
+                // TODO: Better UI for warnings
                 warn!("Warning: Not signing the binary because the host OS is not Windows.");
                 warn!("The binary will still be runnable, but it will raise a warning message with the user.");
                 warn!("Please sign the binary manually before distributing or running it.");

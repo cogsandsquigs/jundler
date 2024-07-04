@@ -1,6 +1,6 @@
-use super::helpers::calculate_checksum;
-use super::platforms::{Arch, Os};
 use super::Error;
+use crate::builder::helpers::calculate_checksum;
+use crate::builder::platforms::{Arch, Os};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -92,7 +92,12 @@ pub struct NodeExecutable {
 impl NodeExecutable {
     /// Validate that the checksum of the file matches it's stored checksum.
     pub fn validate_checksum(&self) -> Result<bool, Error> {
-        Ok(self.checksum == calculate_checksum(&self.path)?)
+        Ok(self.checksum
+            == calculate_checksum(&self.path).map_err(|err| Error::Io {
+                err,
+                path: self.path.clone(),
+                action: "calculating checksum of node executable at".into(),
+            })?)
     }
 }
 

@@ -1,43 +1,17 @@
 use super::lock::{Checksum, NodeExecutableMeta};
-pub use super::platforms::{Arch, Os};
 use super::{sumfile_parser, Error};
+pub use crate::builder::platforms::{Arch, Os};
 use flate2::read::GzDecoder;
 use log::debug;
 use reqwest::blocking::get;
 use semver::Version;
-use sha2::{Digest, Sha256};
-use std::{fs::File, io, path::Path};
+use std::{fs::File, path::Path};
 use std::{
-    fs::{self},
     io::{Read, Write},
     path::PathBuf,
 };
 use tar::Archive;
 use zstd::Encoder;
-
-/// On Unix-based systems, make the binary executable.
-pub fn make_executable(binary_path: &Path) -> Result<(), Error> {
-    use std::os::unix::fs::PermissionsExt;
-
-    let mut perms = binary_path
-        .metadata()
-        .map_err(|err| Error::Io {
-            err,
-            path: binary_path.to_path_buf(),
-            action: "getting metadata for node binary at".to_string(),
-        })?
-        .permissions();
-
-    perms.set_mode(0o755);
-
-    fs::set_permissions(binary_path, perms).map_err(|err| Error::Io {
-        err,
-        path: binary_path.to_path_buf(),
-        action: "setting permissions for node binary at".to_string(),
-    })?;
-
-    Ok(())
-}
 
 /// Rearchive *just* the binary and copy the node binary into the cache directory. Returns the path to the copied binary.
 pub fn repack_node_binary(
@@ -232,25 +206,4 @@ pub fn download_checksums(version: &Version) -> Result<Vec<(Checksum, NodeExecut
     let checksums = sumfile_parser::parse_checksum_file(&checksum_file)?;
 
     Ok(checksums)
-}
-
-/// Calculate the SHA256 checksum of a file. Expects that the file is readable.
-pub fn calculate_checksum(path: &Path) -> Result<Checksum, Error> {
-    // Prepare the hasher
-    let mut hasher = Sha256::new();
-
-    let mut file = File::open(path).map_err(|err| Error::Io {
-        err,
-        path: path.into(),
-        action: "opening a file at".into(),
-    })?;
-
-    io::copy(&mut file, &mut hasher).map_err(|err| Error::Io {
-        err,
-        path: path.into(), // TODO: Get the path from the file
-        action: "calculating the SHA256 checksum of a file at".into(),
-    })?;
-
-    // Output the hash and convert it into a 32-byte array
-    Ok(hasher.finalize().into())
 }

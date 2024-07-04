@@ -7,5 +7,5 @@ pub enum Error {
 
     /// An error from the esbuild API
     #[error(transparent)]
-    Esbuild(#[from] crate::builder::esbuild::Error),
+    ESBuild(#[from] crate::builder::esbuild::Error),
 }

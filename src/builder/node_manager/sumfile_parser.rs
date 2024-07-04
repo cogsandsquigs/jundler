@@ -1,6 +1,6 @@
 use super::lock::{Checksum, NodeExecutableMeta};
-use super::platforms::{Arch, Os};
 use super::Error;
+use crate::builder::platforms::{Arch, Os};
 use nom::branch::alt;
 use nom::character::complete::one_of;
 use nom::combinator::recognize;

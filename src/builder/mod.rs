@@ -2,6 +2,7 @@ mod errors;
 mod esbuild;
 mod helpers;
 pub mod node_manager;
+pub mod platforms;
 mod tests;
 
 pub use errors::Error;
@@ -13,8 +14,10 @@ use crate::ui::messages::{
 };
 use crate::ui::Interface;
 use anyhow::{Context, Ok, Result};
+use esbuild::ESBuild;
 use log::{debug, warn};
-use node_manager::{get_host_arch, get_host_os, Arch, NodeManager, Os};
+use node_manager::NodeManager;
+use platforms::{get_host_arch, get_host_os, Arch, Os};
 use rand::distributions::{Alphanumeric, DistString};
 use semver::Version;
 use std::fs::{self, File};
@@ -28,11 +31,15 @@ pub struct Builder {
     /// The Node.js manager
     node_manager: NodeManager,
 
+    /// The ESBuild instance
+    esbuild: ESBuild,
+
     /// The interface to UI
     interface: Interface,
 }
 
 impl Builder {
+    /// Creates a new builder instance. Expects that `cache_dir` is a valid directory.
     pub fn new(cache_dir: PathBuf) -> Result<Self> {
         // Create a temporary directory to store the build files.
         let temp_dir = TempDir::new(
@@ -44,9 +51,18 @@ impl Builder {
         )
         .context("Could not create a temporary directory to build in!")?;
 
+        // Create the node cache dir
+        let node_cache_dir = cache_dir.join("node");
+        fs::create_dir_all(&node_cache_dir).context("Could not create the cache directory!")?;
+
+        // Create the esbuild cache dir
+        let esbuild_cache_dir = cache_dir.join("esbuild");
+        fs::create_dir_all(&esbuild_cache_dir).context("Could not create the cache directory!")?;
+
         Ok(Self {
             working_dir: temp_dir,
-            node_manager: NodeManager::new(cache_dir)?,
+            node_manager: NodeManager::new(node_cache_dir)?,
+            esbuild: ESBuild::new(esbuild_cache_dir)?,
             interface: Interface::new(MAX_MSG_LEN),
         })
     }
@@ -56,6 +72,8 @@ impl Builder {
         let spinner = self.interface.spawn_spinner(CLEAN_CACHE_MSG);
 
         self.node_manager.clean_cache()?;
+
+        self.esbuild.clean_cache()?;
 
         spinner.close();
 

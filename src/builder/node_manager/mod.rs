@@ -1,18 +1,15 @@
 mod errors;
 mod helpers;
 mod lock;
-mod platforms;
 mod sumfile_parser;
 mod tests;
 
 // Re-export error types
 pub use errors::Error;
 
-use helpers::calculate_checksum;
 use helpers::*;
 use lock::{NodeExecutable, NodeManagerLock};
 use log::warn;
-pub use platforms::{get_host_arch, get_host_os, Arch, Os};
 use semver::Version;
 use std::{
     fs::{self, File},
@@ -20,6 +17,8 @@ use std::{
     path::PathBuf,
 };
 use tempdir::TempDir;
+
+use super::helpers::{calculate_checksum, make_executable};
 
 pub struct NodeManager {
     /// The directory where different node versions are stored.
@@ -37,7 +36,7 @@ pub struct NodeManager {
 impl NodeManager {
     /// Creates a new NodeManager. We expect that `node_cache_dir` exists and is writable.
     pub fn new(node_cache_dir: PathBuf) -> Result<Self, Error> {
-        let lockfile_path = node_cache_dir.join("jundler.lockb");
+        let lockfile_path = node_cache_dir.join("node.lockb");
 
         let lockfile = if lockfile_path.exists() {
             match NodeManagerLock::load(lockfile_path.clone()) {
@@ -62,10 +61,6 @@ impl NodeManager {
         })?;
 
         Ok(Self {
-            // host_os: get_host_os(),
-            // host_arch: get_host_arch(),
-            // target_os,
-            // target_arch,
             node_cache_dir,
             lockfile,
             tmp_dir,
@@ -100,7 +95,11 @@ impl NodeManager {
 
         // Make the binary executable on Unix-based systems
         #[cfg(unix)]
-        make_executable(&binary_path)?;
+        make_executable(&binary_path).map_err(|err| Error::Io {
+            err,
+            path: binary_path.to_path_buf(),
+            action: "making binary executable at".to_string(),
+        })?;
 
         Ok(binary_path)
     }
@@ -176,7 +175,12 @@ impl NodeManager {
         let downloaded_archive_path =
             download_node_archive(self.tmp_dir.path(), version, os, arch)?;
 
-        let actual_checksum = calculate_checksum(&downloaded_archive_path)?;
+        let actual_checksum =
+            calculate_checksum(&downloaded_archive_path).map_err(|err| Error::Io {
+                err,
+                path: downloaded_archive_path.clone(),
+                action: "calculating checksum of node executable at".into(),
+            })?;
 
         // Error out if the checksums don't match
         if actual_checksum != checksum {
@@ -204,7 +208,11 @@ impl NodeManager {
             &self.node_cache_dir,
         )?;
 
-        let archive_checksum = calculate_checksum(&node_archive_path)?;
+        let archive_checksum = calculate_checksum(&node_archive_path).map_err(|err| Error::Io {
+            err,
+            path: node_archive_path.clone(),
+            action: "calculating checksum of node executable at".into(),
+        })?;
 
         // Add the node binary to the lockfile
         self.lockfile.add(NodeExecutable {

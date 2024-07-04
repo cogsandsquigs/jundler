@@ -16,14 +16,14 @@ fn create_node_manager() {
 
     assert_eq!(node_manager.node_cache_dir, tmp_path);
 
-    let expected_lockfile = NodeManagerLock::new(Vec::new(), tmp_path.join("jundler.lockb"));
+    let expected_lockfile = NodeManagerLock::new(Vec::new(), tmp_path.join("node.lockb"));
 
     assert_eq!(node_manager.lockfile, expected_lockfile);
 
     // Check the contents of the file is equal to `expected_lockfile` serialized
     node_manager.lockfile.save().unwrap();
 
-    let lockfile_contents = std::fs::read(tmp_path.join("jundler.lockb")).unwrap();
+    let lockfile_contents = std::fs::read(tmp_path.join("node.lockb")).unwrap();
     let expected_lockfile_contents = bincode::serialize(&expected_lockfile).unwrap();
 
     assert_eq!(lockfile_contents, expected_lockfile_contents);

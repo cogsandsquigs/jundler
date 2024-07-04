@@ -1,12 +1,39 @@
-use super::node_manager::{Arch, Os};
+use super::platforms::{Arch, Os};
 use super::Builder;
 use crate::js_config::{PackageConfig, SEAConfig};
 use anyhow::{anyhow, Context, Result};
 use log::warn;
-use std::fs;
+use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::{fs, io};
+
+/// On Unix-based systems, make the binary executable.
+pub fn make_executable(binary_path: &Path) -> Result<(), io::Error> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let mut perms = binary_path.metadata()?.permissions();
+
+    perms.set_mode(0o755);
+
+    fs::set_permissions(binary_path, perms)?;
+
+    Ok(())
+}
+
+/// Calculate the SHA256 checksum of a file. Expects that the file is readable.
+pub fn calculate_checksum(path: &Path) -> Result<[u8; 32], io::Error> {
+    // Prepare the hasher
+    let mut hasher = Sha256::new();
+
+    let mut file = File::open(path)?;
+
+    io::copy(&mut file, &mut hasher)?;
+
+    // Output the hash and convert it into a 32-byte array
+    Ok(hasher.finalize().into())
+}
 
 // Private helper functions to do steps of the build process
 impl Builder {
@@ -65,12 +92,14 @@ impl Builder {
         package_config: &PackageConfig,
         sea_config: &mut SEAConfig,
     ) -> Result<()> {
+        // Get the ESBuild binary
+        // TODO: UI display this.
+        let esbuild_bin = self.esbuild.get_binary()?;
+
         // Run the esbuild command
-        let esbuild_cmd_output = Command::new("npx")
+        let esbuild_cmd_output = Command::new(esbuild_bin)
             .current_dir(&self.working_dir.path().join("project")) // Run the command in the project directory
-            .arg("esbuild")
-            // Use the main entrypoint from the package.json file, or the default from the sea-config.json file
-            .arg(package_config.main.as_ref().unwrap_or(&sea_config.main))
+            .arg(package_config.main.as_ref().unwrap_or(&sea_config.main)) // Use the main entrypoint from the package.json file, or the default from the sea-config.json file
             .arg("--bundle")
             .arg("--platform=node") // Bundle for Node.js
             .arg("--outfile=bundled.js") // Output to `bundled.js` in the build directory
@@ -159,33 +188,30 @@ impl Builder {
     /// Injects the app into the node binary.
     pub(super) fn inject_app(&self, node_bin: &Path, sea_blob: &Path, target_os: Os) -> Result<()> {
         // Run the postject command
-        let postject_cmd_output = Command::new("npx")
+        let postject_cmd_output = Command::new("npm")
             .current_dir(&self.working_dir)
+            .arg("exec")
             .arg("--yes")
+            .arg("--")
             .arg("postject")
             .arg(node_bin)
             .arg("NODE_SEA_BLOB")
             .arg(sea_blob)
             .arg("--sentinel-fuse")
             .arg("NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2")
-            .arg(if target_os == Os::MacOS {
-                "--macho-segment-name"
+            .args(if target_os == Os::MacOS {
+                &["--macho-segment-name", "NODE_SEA"]
             } else {
-                ""
-            })
-            .arg(if target_os == Os::MacOS {
-                "NODE_SEA"
-            } else {
-                ""
+                &["", ""]
             })
             .output()
             .context("Error injecting app into node binary")?;
 
         if !postject_cmd_output.status.success() {
             return Err(anyhow!(
-                "Error generating SEA blob file:\n{}\n{}",
-                String::from_utf8_lossy(&postject_cmd_output.stdout),
-                String::from_utf8_lossy(&postject_cmd_output.stderr)
+                "Error injecting app into node binary:\n{}\n{}\n",
+                String::from_utf8_lossy(&postject_cmd_output.stdout).trim(),
+                String::from_utf8_lossy(&postject_cmd_output.stderr).trim()
             ));
         }
 

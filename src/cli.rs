@@ -1,4 +1,4 @@
-use crate::builder::node::{Arch, Os};
+use crate::builder::node_manager::{Arch, Os};
 use clap::{Parser, Subcommand};
 use semver::Version;
 use std::path::PathBuf;

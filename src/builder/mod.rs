@@ -1,6 +1,10 @@
+mod errors;
+mod esbuild;
 mod helpers;
-pub mod node;
+pub mod node_manager;
 mod tests;
+
+pub use errors::Error;
 
 use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
 use crate::ui::messages::{
@@ -10,7 +14,7 @@ use crate::ui::messages::{
 use crate::ui::Interface;
 use anyhow::{Context, Ok, Result};
 use log::{debug, warn};
-use node::{get_host_arch, get_host_os, Arch, NodeManager, Os};
+use node_manager::{get_host_arch, get_host_os, Arch, NodeManager, Os};
 use rand::distributions::{Alphanumeric, DistString};
 use semver::Version;
 use std::fs::{self, File};

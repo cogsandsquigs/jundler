@@ -1,4 +1,4 @@
-use super::node::{Arch, Os};
+use super::node_manager::{Arch, Os};
 use super::Builder;
 use crate::js_config::{PackageConfig, SEAConfig};
 use anyhow::{anyhow, Context, Result};

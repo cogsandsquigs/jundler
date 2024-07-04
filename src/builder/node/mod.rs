@@ -77,8 +77,21 @@ impl NodeManager {
         let binary = self.lockfile.find(version, os, arch);
 
         // Return it if it exists
-        let binary_path = if let Some(host_archive) = binary {
-            self.unpack_archive(host_archive)?
+        let binary_path = if let Some(archive) = binary {
+            // Check the checksum of the binary. If it's invalid, re-download it.
+            if !archive.validate_checksum()? {
+                warn!("Checksum mismatch for node binary, re-downloading"); // TODO: Better UI
+
+                // Remove the binary from the cache
+                self.remove(archive)?;
+
+                // Download the binary again
+                self.download(version, os, arch)?.0
+            }
+            // If the binary exists, and the checksum is valid, return the path to the binary
+            else {
+                self.unpack_archive(&archive)?
+            }
         }
         // If it doesn't exist, download it
         else {
@@ -86,19 +99,18 @@ impl NodeManager {
         };
 
         // Make the binary executable on Unix-based systems
-        if cfg!(unix) {
-            make_executable(&binary_path)?
-        };
+        #[cfg(unix)]
+        make_executable(&binary_path)?;
 
         Ok(binary_path)
     }
 
     /// Removes a node binary from the cache.
-    pub fn remove(&mut self, node_executable: &NodeExecutable) -> Result<(), Error> {
+    pub fn remove(&mut self, node_executable: NodeExecutable) -> Result<(), Error> {
         let path = &node_executable.path;
 
         // Remove the binary from the lockfile
-        self.lockfile.remove(node_executable);
+        self.lockfile.remove(&node_executable);
 
         // Save the lockfile
         self.lockfile.save()?;

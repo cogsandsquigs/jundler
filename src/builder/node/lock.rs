@@ -55,10 +55,13 @@ impl NodeManagerLock {
     }
 
     /// Get an executable with a specific version, arch, and os
-    pub fn find(&self, version: &Version, os: Os, arch: Arch) -> Option<&NodeExecutable> {
-        self.node_executables.iter().find(|exec| {
-            exec.meta.version == *version && exec.meta.arch == arch && exec.meta.os == os
-        })
+    pub fn find(&self, version: &Version, os: Os, arch: Arch) -> Option<NodeExecutable> {
+        self.node_executables
+            .iter()
+            .find(|exec| {
+                exec.meta.version == *version && exec.meta.arch == arch && exec.meta.os == os
+            })
+            .cloned()
     }
 
     /// Given a node executable, insert it into the lockfile
@@ -87,17 +90,6 @@ pub struct NodeExecutable {
 
 /// A (compressed) node executable that can be uncompressed and used/ran
 impl NodeExecutable {
-    /// Create a new node executable
-    pub fn new(version: Version, arch: Arch, os: Os, path: PathBuf) -> Result<Self, Error> {
-        let checksum = calculate_checksum(&path)?;
-
-        Ok(Self {
-            meta: NodeExecutableMeta { version, arch, os },
-            checksum,
-            path,
-        })
-    }
-
     /// Validate that the checksum of the file matches it's stored checksum.
     pub fn validate_checksum(&self) -> Result<bool, Error> {
         Ok(self.checksum == calculate_checksum(&self.path)?)

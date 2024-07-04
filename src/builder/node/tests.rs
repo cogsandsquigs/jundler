@@ -58,7 +58,7 @@ fn download_save_unpack_remove_node() {
     assert!(locked_binary.validate_checksum().unwrap());
 
     // Check that when we unpack the binary, it's equal to the downloaded binary
-    let unpacked_path = node_manager.unpack_archive(locked_binary).unwrap();
+    let unpacked_path = node_manager.unpack_archive(&locked_binary).unwrap();
 
     // Get file contents
     let unpacked_contents = std::fs::read(unpacked_path).unwrap();
@@ -67,7 +67,7 @@ fn download_save_unpack_remove_node() {
     assert_eq!(unpacked_contents, executable_contents);
 
     // Remove the node binary
-    node_manager.remove(&locked_binary.clone()).unwrap();
+    node_manager.remove(locked_binary).unwrap();
 
     // Test the archive doesn't exist
     assert!(!archive_path.exists());

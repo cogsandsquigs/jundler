@@ -14,6 +14,10 @@
 	repository = "https://github.com/cogsandsquigs/jundler"
 	version = "0.2.2"
 
+[metadata]
+	# The version of esbuild to use. This is automatically downloaded and used
+	esbuild_version = "0.23.0"
+
 	# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

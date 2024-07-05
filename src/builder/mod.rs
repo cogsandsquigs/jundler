@@ -5,8 +5,6 @@ pub mod node_manager;
 pub mod platforms;
 mod tests;
 
-pub use errors::Error;
-
 use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
 use crate::ui::messages::{
     BUNDLE_PROJ_MSG, CLEAN_CACHE_MSG, COPY_PROJ_MSG, GEN_SEA_BLOB_MSG, HOST_NODE_MSG,

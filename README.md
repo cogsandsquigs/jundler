@@ -86,6 +86,7 @@ Because it sounded funny and I liked it. :p
 -   [x] Cross-compilation
 -   [x] Codesigning for macOS
 -   [x] Redesign CLI + allow for cleaning cache dir.
+-   [ ] Unit-test ESBuild integration
 -   [-] Spinners/progress bars + better UI
 -   [-] Codesigning for Windows
 -   [ ] Better error handling

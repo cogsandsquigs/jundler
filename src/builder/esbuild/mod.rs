@@ -5,7 +5,6 @@ mod tests;
 
 pub use errors::Error;
 
-use super::helpers::make_executable;
 use crate::builder::helpers::calculate_checksum;
 use helpers::{download_esbuild_archive, repack_esbuild_binary, unpack_downloaded_esbuild_archive};
 use lock::{ESBuildExecutable, ESBuildLock};
@@ -96,12 +95,15 @@ impl ESBuild {
 
         // Make the binary executable on Unix-based systems
         #[cfg(unix)]
-        make_executable(&binary_path).map_err(|err| Error::Io {
-            err,
-            path: binary_path.to_path_buf(),
-            action: "making binary executable at".to_string(),
-        })?;
+        {
+            use super::helpers::make_executable;
 
+            make_executable(&binary_path).map_err(|err| Error::Io {
+                err,
+                path: binary_path.to_path_buf(),
+                action: "making binary executable at".to_string(),
+            })?;
+        }
         Ok(binary_path)
     }
 

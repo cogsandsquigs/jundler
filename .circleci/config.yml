@@ -13,9 +13,6 @@ tag-filter: &tag-filter
         only:
             - /^v.*/
 
-cache-key: &cache-key
-    - cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
-
 executors:
     linux-docker:
         docker:
@@ -40,13 +37,13 @@ jobs:
         steps:
             - checkout
             - restore_cache:
-                  keys: *cache-key
+                  keys: cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
             - run: curl -o rustup https://sh.rustup.rs
             - run: bash rustup -y
             - run: rm ~/.gitconfig
             - run: ~/.cargo/bin/cargo test --bin jundler
             - save_cache:
-                  key: *cache-key
+                  key: cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
                   paths:
                       - ~/.cargo
 
@@ -56,7 +53,7 @@ jobs:
         steps:
             - checkout
             - restore_cache:
-                  key: *cache-key
+                  key: cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
             - run: cargo publish --token $CARGO_PUBLISH_TOKEN
 
 # Invoke jobs via workflows

@@ -52,6 +52,7 @@ jobs:
                   key: cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
                   paths:
                       - ~/.cargo
+                      - target
 
     publish:
         executor: linux-docker

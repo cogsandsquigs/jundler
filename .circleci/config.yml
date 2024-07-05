@@ -13,8 +13,7 @@ tag-filter: &tag-filter
 executors:
     linux:
         docker:
-            # - image: rust:latest # `latest` instead of `slim` because we need OpenSSL bindnigs.
-            - image: vibbioinfocore/rust-node-ci:latest
+            - image: rust:latest
 
         environment:
             CARGO_TERM_COLOR: always

@@ -1,6 +1,7 @@
 [![License](https://img.shields.io/github/license/cogsandsquigs/jundler?style=for-the-badge)](https://github.com/cogsandsquigs/jundler/blob/main/LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/jundler?style=for-the-badge)](https://crates.io/crates/jundler)
 [![Crates.io Downloads (recent)](https://img.shields.io/crates/dr/jundler?style=for-the-badge)](https://crates.io/crates/jundler)
+[![CircleCI](https://img.shields.io/circleci/build/github/cogsandsquigs/jundler?style=for-the-badge)](https://app.circleci.com/pipelines/github/cogsandsquigs/jundler)
 
 # Jundler
 

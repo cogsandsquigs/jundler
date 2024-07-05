@@ -14,9 +14,11 @@ tag-filter: &tag-filter
             - /^v.*/
 
 executors:
+    # Only used for publishing
     linux-docker:
         docker:
             - image: rust:latest
+
     linux:
         machine:
             image: ubuntu-2204:current
@@ -48,7 +50,7 @@ jobs:
                       - ~/.cargo
 
     publish:
-        executor: linux
+        executor: linux-docker
 
         steps:
             - checkout
@@ -65,8 +67,7 @@ workflows:
                   name: test-on-<< matrix.platform >>
                   matrix:
                       parameters:
-                          platform:
-                              ["linux-docker", "linux", "macos", "win/default"]
+                          platform: ["linux", "macos", "win/default"]
 
     # Publish to crates.io on tags
     publishing:

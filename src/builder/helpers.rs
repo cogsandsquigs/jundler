@@ -3,7 +3,6 @@ use super::Builder;
 use crate::js_config::{PackageConfig, SEAConfig};
 use crate::ui::messages::{BUNDLING_MSG, ESBUILD_BINARY_MSG};
 use anyhow::{anyhow, Context, Result};
-use log::warn;
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::path::{Path, PathBuf};

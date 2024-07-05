@@ -2,12 +2,12 @@ pub mod messages;
 
 use console::{style, Term};
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
-use std::{cell::RefCell, io::Write, rc::Rc, time::Duration};
+use std::time::Duration;
 
 const SPINNER_FRAMES: &[&str] = &[
     "⠁", "⠂", "⠄", "⡀", "⡈", "⡐", "⡠", "⣀", "⣁", "⣂", "⣄", "⣌", "⣔", "⣤", "⣥", "⣦", "⣮", "⣶", "⣷",
     "⣿", "⡿", "⠿", "⢟", "⠟", "⡛", "⠛", "⠫", "⢋", "⠋", "⠍", "⡉", "⠉", "⠑", "⠡", "⢁",
-]; // &["◜", "◠", "◝", "◞", "◡", "◟"];
+];
 
 const SPINNER_FRAME_DURATION: Duration = Duration::from_millis(80);
 
@@ -94,7 +94,7 @@ impl Interface {
 #[derive(Clone, Debug)]
 pub struct Spinner {
     /// The underlying progress bar.
-    spinner: Rc<RefCell<ProgressBar>>,
+    spinner: ProgressBar,
 
     /// The number of dots to display after the message.
     num_dots: usize,
@@ -109,7 +109,7 @@ pub struct Spinner {
 impl Spinner {
     pub fn new(spinner: ProgressBar, num_dots: usize, depth: usize, new_depth: bool) -> Spinner {
         Spinner {
-            spinner: Rc::new(RefCell::new(spinner)),
+            spinner,
             num_dots,
             depth,
             new_depth,
@@ -118,14 +118,12 @@ impl Spinner {
 
     /// Starts the spinner. Note that the spinner does not appear until the first tick.
     pub fn start(&mut self) {
-        self.spinner
-            .borrow_mut()
-            .enable_steady_tick(SPINNER_FRAME_DURATION);
+        self.spinner.enable_steady_tick(SPINNER_FRAME_DURATION);
     }
 
     /// Closes the spinner.
     pub fn close(self) {
-        let raw_spinner = self.spinner.borrow();
+        let raw_spinner = self.spinner;
 
         raw_spinner.set_style(
             ProgressStyle::default_spinner()

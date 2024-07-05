@@ -16,7 +16,7 @@ use crate::ui::messages::{
 use crate::ui::Interface;
 use anyhow::{Context, Ok, Result};
 use esbuild::ESBuild;
-use log::{debug, warn};
+use log::debug;
 use node_manager::NodeManager;
 use platforms::{get_host_arch, get_host_os, Arch, Os};
 use rand::distributions::{Alphanumeric, DistString};

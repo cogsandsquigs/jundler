@@ -1,6 +1,7 @@
 use super::platforms::{Arch, Os};
 use super::Builder;
 use crate::js_config::{PackageConfig, SEAConfig};
+use crate::ui::messages::{BUNDLING_MSG, ESBUILD_BINARY_MSG};
 use anyhow::{anyhow, Context, Result};
 use log::warn;
 use sha2::{Digest, Sha256};
@@ -94,7 +95,14 @@ impl Builder {
     ) -> Result<()> {
         // Get the ESBuild binary
         // TODO: UI display this.
+
+        let spinner = self.interface.spawn_spinner(ESBUILD_BINARY_MSG, 2);
+
         let esbuild_bin = self.esbuild.get_binary()?;
+
+        spinner.close();
+
+        let spinner = self.interface.spawn_spinner(BUNDLING_MSG, 2);
 
         // Run the esbuild command
         let esbuild_cmd_output = Command::new(esbuild_bin)
@@ -113,6 +121,8 @@ impl Builder {
                 String::from_utf8_lossy(&esbuild_cmd_output.stderr)
             ));
         }
+
+        spinner.close();
 
         // Rewrite `sea-config.json` to point to the bundled file
         let new_sea_config = SEAConfig {

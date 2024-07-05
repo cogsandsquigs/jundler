@@ -120,7 +120,7 @@ impl Builder {
                 .as_ref()
                 .is_some_and(|m| m.ends_with(".ts"))
         {
-            let spinner: crate::ui::Spinner = self.interface.spawn_spinner(BUNDLE_PROJ_MSG, 1);
+            let spinner = self.interface.spawn_spinner(BUNDLE_PROJ_MSG, 1);
 
             self.bundle_project(&package_config, &mut sea_config)?;
 

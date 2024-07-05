@@ -58,7 +58,7 @@ impl Interface {
         let message = message.to_string();
         let num_dots = self.max_msg_len.saturating_sub(message.len());
 
-        let new_depth = depth != self.current_depth;
+        let new_depth = depth > self.current_depth;
         self.current_depth = depth;
 
         let pb = ProgressBar::new_spinner().with_message(message).with_style(
@@ -131,14 +131,14 @@ impl Spinner {
 
 fn get_template(ending: &str, num_dots: usize, depth: usize, new_depth: bool) -> String {
     let depth_string = if new_depth {
-        " ".to_string() + &"  ".repeat(depth - 1) + "╰─ "
+        "   ".repeat(depth) + " ╰─ "
     } else {
-        "  ".repeat(depth + 1)
+        "   ".repeat(depth + 1) + " "
     };
 
     format!(
         "{tabs}{{msg}} {dots} {ending}",
-        tabs = console::style(depth_string).dim(),
-        dots = console::style("·".repeat(num_dots)).dim(),
+        tabs = console::style(&depth_string).dim(),
+        dots = console::style("·".repeat(num_dots.saturating_sub(3 * (depth + 1) + 1))).dim(),
     )
 }

@@ -12,6 +12,9 @@ tag-filter: &tag-filter
     tags:
         only:
             - /^v.*/
+    branches:
+        ignore:
+            - /.*/
 
 executors:
     # Only used for publishing

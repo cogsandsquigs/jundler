@@ -10,6 +10,7 @@ use std::process::Command;
 use std::{fs, io};
 
 /// On Unix-based systems, make the binary executable.
+#[cfg(unix)]
 pub fn make_executable(binary_path: &Path) -> Result<(), io::Error> {
     use std::os::unix::fs::PermissionsExt;
 

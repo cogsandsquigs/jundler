@@ -18,7 +18,7 @@ use std::{
 };
 use tempdir::TempDir;
 
-use super::helpers::{calculate_checksum, make_executable};
+use super::helpers::calculate_checksum;
 
 pub struct NodeManager {
     /// The directory where different node versions are stored.
@@ -95,11 +95,15 @@ impl NodeManager {
 
         // Make the binary executable on Unix-based systems
         #[cfg(unix)]
-        make_executable(&binary_path).map_err(|err| Error::Io {
-            err,
-            path: binary_path.to_path_buf(),
-            action: "making binary executable at".to_string(),
-        })?;
+        {
+            use super::helpers::make_executable;
+
+            make_executable(&binary_path).map_err(|err| Error::Io {
+                err,
+                path: binary_path.to_path_buf(),
+                action: "making binary executable at".to_string(),
+            })?;
+        }
 
         Ok(binary_path)
     }

@@ -2,7 +2,6 @@
 
 use super::*;
 use assert_fs::{NamedTempFile, TempDir};
-use hex::FromHex;
 use lock::{ESBuildExecutable, ESBuildLock};
 
 /// Test that we can create a new NodeManager

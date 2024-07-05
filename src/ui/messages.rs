@@ -1,4 +1,4 @@
-pub const MAX_MSG_LEN: usize = 56;
+pub const MAX_MSG_LEN: usize = 49;
 
 pub const WELCOME_MSG: &str = "✨ Welcome to jundler! ✨";
 pub const CLEAN_CACHE_MSG: &str = "🧹 Cleaning cache";

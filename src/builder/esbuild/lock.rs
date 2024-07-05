@@ -35,7 +35,9 @@ impl ESBuildLock {
             action: "reading the esbuild lockfile at".into(),
         })?;
 
-        let lock = bincode::deserialize(&lockfile_contents)?;
+        let mut lock: ESBuildLock = bincode::deserialize(&lockfile_contents)?;
+
+        lock.lockfile_path = lockfile_path;
 
         Ok(lock)
     }

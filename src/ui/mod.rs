@@ -1,8 +1,8 @@
 pub mod messages;
 
-use console::Term;
+use console::{style, Term};
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
-use std::{cell::RefCell, rc::Rc, time::Duration};
+use std::{cell::RefCell, io::Write, rc::Rc, time::Duration};
 
 const SPINNER_FRAMES: &[&str] = &[
     "⠁", "⠂", "⠄", "⡀", "⡈", "⡐", "⡠", "⣀", "⣁", "⣂", "⣄", "⣌", "⣔", "⣤", "⣥", "⣦", "⣮", "⣶", "⣷",
@@ -48,6 +48,20 @@ impl Interface {
         S: ToString,
     {
         self.term.write_line(&message.to_string()).unwrap();
+    }
+
+    /// Print a warning to the terminal.
+    pub fn warn<S>(&self, message: S)
+    where
+        S: ToString,
+    {
+        self.term
+            .write_line(
+                &style(format!("❗️ {}", message.to_string()))
+                    .yellow()
+                    .to_string(),
+            )
+            .unwrap();
     }
 
     /// Spawns a new spinner. Returns a handle to the spinner, which can be used to update the spinner.
@@ -131,14 +145,22 @@ impl Spinner {
 
 fn get_template(ending: &str, num_dots: usize, depth: usize, new_depth: bool) -> String {
     let depth_string = if new_depth {
-        "   ".repeat(depth) + " ╰─ "
+        "   ".repeat(depth) + "╰─→ "
+    } else if depth > 0 {
+        "   ".repeat(depth) + "    "
     } else {
-        "   ".repeat(depth + 1) + " "
+        "   ".into()
+    };
+
+    let num_dots = if depth > 0 {
+        num_dots.saturating_sub(3 * depth + 1)
+    } else {
+        num_dots
     };
 
     format!(
         "{tabs}{{msg}} {dots} {ending}",
         tabs = console::style(&depth_string).dim(),
-        dots = console::style("·".repeat(num_dots.saturating_sub(3 * (depth + 1) + 1))).dim(),
+        dots = console::style("·".repeat(num_dots)).dim(),
     )
 }

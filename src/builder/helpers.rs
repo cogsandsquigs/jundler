@@ -251,8 +251,7 @@ impl Builder {
 
     /// Codesign the binary for Windows
     pub(super) fn windows_sign(&self, binary: &Path) -> Result<()> {
-        warn!("Windows signing is in beta and may not work as expected. Please report any issues here: https://github.com/cogsandsquigs/jundler/issues/new");
-
+        self.interface.warn("Windows signing is in beta and may not work as expected. Please report any issues here: https://github.com/cogsandsquigs/jundler/issues/new");
         let sign_cmd_output = Command::new("signtool")
             .arg("sign")
             .arg("/fd")

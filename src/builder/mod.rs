@@ -70,12 +70,17 @@ impl Builder {
         // Draw the welcome message
         builder.interface.println(WELCOME_MSG);
 
+        builder
+            .interface
+            .warn("This is an experimental feature and may not work as expected.");
+        builder.interface.warn("Submit an issue at https://github.com/cogsandsquigs/jundler/issues/new if you encounter any problems.");
+
         Ok(builder)
     }
 
     /// Cleans the cache directory of the Node.js manager.
     pub fn clean_cache(&mut self) -> Result<()> {
-        let spinner = self.interface.spawn_spinner(CLEAN_CACHE_MSG, 1);
+        let spinner = self.interface.spawn_spinner(CLEAN_CACHE_MSG, 0);
 
         self.node_manager.clean_cache()?;
 
@@ -101,7 +106,7 @@ impl Builder {
 
         debug!("Build in directory: {}", self.working_dir.path().display());
 
-        let spinner = self.interface.spawn_spinner(COPY_PROJ_MSG, 1);
+        let spinner = self.interface.spawn_spinner(COPY_PROJ_MSG, 0);
 
         // Copy the project to the build directory
         self.copy_and_prepare_project(project_dir, target_os, target_arch)?;
@@ -120,14 +125,14 @@ impl Builder {
                 .as_ref()
                 .is_some_and(|m| m.ends_with(".ts"))
         {
-            let spinner = self.interface.spawn_spinner(BUNDLE_PROJ_MSG, 1);
+            let spinner = self.interface.spawn_spinner(BUNDLE_PROJ_MSG, 0);
 
             self.bundle_project(&package_config, &mut sea_config)?;
 
             spinner.close();
         }
 
-        let spinner = self.interface.spawn_spinner(TARGET_NODE_MSG, 1);
+        let spinner = self.interface.spawn_spinner(TARGET_NODE_MSG, 0);
 
         let target_node_bin =
             self.node_manager
@@ -135,7 +140,7 @@ impl Builder {
 
         spinner.close();
 
-        let spinner = self.interface.spawn_spinner(HOST_NODE_MSG, 1);
+        let spinner = self.interface.spawn_spinner(HOST_NODE_MSG, 0);
 
         let host_node_bin = self
             .node_manager
@@ -143,14 +148,14 @@ impl Builder {
 
         spinner.close();
 
-        let spinner = self.interface.spawn_spinner(GEN_SEA_BLOB_MSG, 1);
+        let spinner = self.interface.spawn_spinner(GEN_SEA_BLOB_MSG, 0);
 
         // Generate the SEA blob
         let sea_blob = self.gen_sea_blob(&host_node_bin, sea_config)?;
 
         spinner.close();
 
-        let spinner = self.interface.spawn_spinner(INJECT_APP_MSG, 1);
+        let spinner = self.interface.spawn_spinner(INJECT_APP_MSG, 0);
 
         // Inject the app into the node binary
         self.inject_app(&target_node_bin, &sea_blob, target_os)?;
@@ -174,29 +179,33 @@ impl Builder {
         // Codesign the binary if we're on MacOS
         match (host_os, target_os) {
             (Os::MacOS, Os::MacOS) => {
-                let spinner = self.interface.spawn_spinner(MACOS_CODESIGN_MSG, 1);
+                let spinner = self.interface.spawn_spinner(MACOS_CODESIGN_MSG, 0);
                 self.macos_codesign(&app_path)?;
                 spinner.close();
             }
 
             (_, Os::MacOS) => {
-                // TODO: Better UI for warnings
-                warn!("Warning: Not codesigning the binary because the host OS is not MacOS.");
-                warn!("This will cause an error when running the binary on MacOS.");
-                warn!("Please codesign the binary manually before distributing or running it.");
+                self.interface
+                    .warn("Warning: Not codesigning the binary because the host OS is not MacOS.");
+                self.interface
+                    .warn("This will cause an error when running the binary on MacOS.");
+                self.interface
+                    .warn("Please codesign the binary manually before distributing or running it.");
             }
 
             (Os::Windows, Os::Windows) => {
-                let spinner = self.interface.spawn_spinner(WINDOWS_CODESIGN_MSG, 1);
+                let spinner = self.interface.spawn_spinner(WINDOWS_CODESIGN_MSG, 0);
                 self.windows_sign(&app_path)?;
                 spinner.close();
             }
 
             (_, Os::Windows) => {
-                // TODO: Better UI for warnings
-                warn!("Warning: Not signing the binary because the host OS is not Windows.");
-                warn!("The binary will still be runnable, but it will raise a warning message with the user.");
-                warn!("Please sign the binary manually before distributing or running it.");
+                self.interface
+                    .warn("Warning: Not signing the binary because the host OS is not Windows.");
+                self.interface
+                    .warn("The binary will still be runnable, but it will raise a warning message with the user.");
+                self.interface
+                    .warn("Please sign the binary manually before distributing or running it.");
             }
 
             _ => {

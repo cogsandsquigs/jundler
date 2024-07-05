@@ -1,5 +1,6 @@
 pub const MAX_MSG_LEN: usize = 50;
 
+pub const WELCOME_MSG: &str = "✨ Welcome to jundler! ✨";
 pub const CLEAN_CACHE_MSG: &str = "🧹 Cleaning cache";
 pub const COPY_PROJ_MSG: &str = "📥 Copying project and preparing for build";
 pub const BUNDLE_PROJ_MSG: &str = "📦 Bundling project with ESBuild";

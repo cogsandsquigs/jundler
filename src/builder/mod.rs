@@ -10,7 +10,8 @@ pub use errors::Error;
 use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
 use crate::ui::messages::{
     BUNDLE_PROJ_MSG, CLEAN_CACHE_MSG, COPY_PROJ_MSG, GEN_SEA_BLOB_MSG, HOST_NODE_MSG,
-    INJECT_APP_MSG, MACOS_CODESIGN_MSG, MAX_MSG_LEN, TARGET_NODE_MSG, WINDOWS_CODESIGN_MSG,
+    INJECT_APP_MSG, MACOS_CODESIGN_MSG, MAX_MSG_LEN, TARGET_NODE_MSG, WELCOME_MSG,
+    WINDOWS_CODESIGN_MSG,
 };
 use crate::ui::Interface;
 use anyhow::{Context, Ok, Result};
@@ -59,17 +60,22 @@ impl Builder {
         let esbuild_cache_dir = cache_dir.join("esbuild");
         fs::create_dir_all(&esbuild_cache_dir).context("Could not create the cache directory!")?;
 
-        Ok(Self {
+        let builder = Self {
             working_dir: temp_dir,
             node_manager: NodeManager::new(node_cache_dir)?,
             esbuild: ESBuild::new(esbuild_cache_dir)?,
             interface: Interface::new(MAX_MSG_LEN),
-        })
+        };
+
+        // Draw the welcome message
+        builder.interface.println(WELCOME_MSG);
+
+        Ok(builder)
     }
 
     /// Cleans the cache directory of the Node.js manager.
     pub fn clean_cache(&mut self) -> Result<()> {
-        let spinner = self.interface.spawn_spinner(CLEAN_CACHE_MSG);
+        let spinner = self.interface.spawn_spinner(CLEAN_CACHE_MSG, 1);
 
         self.node_manager.clean_cache()?;
 
@@ -95,7 +101,7 @@ impl Builder {
 
         debug!("Build in directory: {}", self.working_dir.path().display());
 
-        let spinner = self.interface.spawn_spinner(COPY_PROJ_MSG);
+        let spinner = self.interface.spawn_spinner(COPY_PROJ_MSG, 1);
 
         // Copy the project to the build directory
         self.copy_and_prepare_project(project_dir, target_os, target_arch)?;
@@ -114,14 +120,14 @@ impl Builder {
                 .as_ref()
                 .is_some_and(|m| m.ends_with(".ts"))
         {
-            let spinner = self.interface.spawn_spinner(BUNDLE_PROJ_MSG);
+            let spinner: crate::ui::Spinner = self.interface.spawn_spinner(BUNDLE_PROJ_MSG, 1);
 
             self.bundle_project(&package_config, &mut sea_config)?;
 
             spinner.close();
         }
 
-        let spinner = self.interface.spawn_spinner(TARGET_NODE_MSG);
+        let spinner = self.interface.spawn_spinner(TARGET_NODE_MSG, 1);
 
         let target_node_bin =
             self.node_manager
@@ -129,7 +135,7 @@ impl Builder {
 
         spinner.close();
 
-        let spinner = self.interface.spawn_spinner(HOST_NODE_MSG);
+        let spinner = self.interface.spawn_spinner(HOST_NODE_MSG, 1);
 
         let host_node_bin = self
             .node_manager
@@ -137,14 +143,14 @@ impl Builder {
 
         spinner.close();
 
-        let spinner = self.interface.spawn_spinner(GEN_SEA_BLOB_MSG);
+        let spinner = self.interface.spawn_spinner(GEN_SEA_BLOB_MSG, 1);
 
         // Generate the SEA blob
         let sea_blob = self.gen_sea_blob(&host_node_bin, sea_config)?;
 
         spinner.close();
 
-        let spinner = self.interface.spawn_spinner(INJECT_APP_MSG);
+        let spinner = self.interface.spawn_spinner(INJECT_APP_MSG, 1);
 
         // Inject the app into the node binary
         self.inject_app(&target_node_bin, &sea_blob, target_os)?;
@@ -168,7 +174,7 @@ impl Builder {
         // Codesign the binary if we're on MacOS
         match (host_os, target_os) {
             (Os::MacOS, Os::MacOS) => {
-                let spinner = self.interface.spawn_spinner(MACOS_CODESIGN_MSG);
+                let spinner = self.interface.spawn_spinner(MACOS_CODESIGN_MSG, 1);
                 self.macos_codesign(&app_path)?;
                 spinner.close();
             }
@@ -181,7 +187,7 @@ impl Builder {
             }
 
             (Os::Windows, Os::Windows) => {
-                let spinner = self.interface.spawn_spinner(WINDOWS_CODESIGN_MSG);
+                let spinner = self.interface.spawn_spinner(WINDOWS_CODESIGN_MSG, 1);
                 self.windows_sign(&app_path)?;
                 spinner.close();
             }

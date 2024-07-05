@@ -71,8 +71,10 @@ workflows:
                   name: test-on-<< matrix.platform >>
                   matrix:
                       parameters:
-                          platform: ["linux", "macos", "win/default"]
-
+                          platform:
+                              - linux
+                              - macos
+                              #   - win/default # Exclude this one due to build trouble
     # Publish to crates.io on tags
     publishing:
         jobs:

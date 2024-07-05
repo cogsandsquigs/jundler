@@ -2,107 +2,78 @@
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+orbs:
+    win: circleci/windows@5.0
+
 # Note: filters act like an OR, not an AND
+
+# Filters for tags of versions
 tag-filter: &tag-filter
     tags:
         only:
             - /^v.*/
-    branches:
-        ignore: /.*/
+
+cache-key: &cache-key
+    - cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
 
 executors:
-    linux:
+    linux-docker:
         docker:
             - image: rust:latest
-
-        environment:
-            CARGO_TERM_COLOR: always
-            CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
-
-    mac:
+    linux:
+        machine:
+            image: ubuntu-2204:current
+    macos:
         macos:
             xcode: 15.4.0
-
-        environment:
-            CARGO_TERM_COLOR: always
-            CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-    test-linux:
-        executor: linux
-
-        # # Add steps to the job
-        # # See: https://circleci.com/docs/2.0/configuration-reference/#steps
-        # parallelism: 4
+    test:
+        parameters:
+            platform:
+                type: executor
+                default: "linux"
+        executor: << parameters.platform >>
 
         steps:
-            # Checkout the code from GitHub
             - checkout
-
-            # Restore cached dependencies
             - restore_cache:
-                  key: jundler-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
-
-            # # Install node
-            # - run:
-            #       name: "Install Node.js"
-            #       command: |
-            #           curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
-            #           bash nodesource_setup.sh
-            #           apt install -y nodejs
-
-            # Test the code
-            - run:
-                  name: "Test dotbak (unit tests only)"
-                  # TODO: parallelize tests
-                  command: |
-                      cargo test --bin jundler
-
-            # Save buildfiles and dependencies to cache
+                  keys: *cache-key
+            - run: curl -o rustup https://sh.rustup.rs
+            - run: bash rustup -y
+            - run: rm ~/.gitconfig
+            - run: ~/.cargo/bin/cargo test --bin jundler
             - save_cache:
-                  key: jundler-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
+                  key: *cache-key
                   paths:
-                      - target
+                      - ~/.cargo
 
-    cargo-publish:
+    publish:
         executor: linux
 
         steps:
             - checkout
-
-              # Restore cached dependencies
             - restore_cache:
-                  key: dotbak-build-cache-branch-{{ .Branch }}-arch-{{ arch }}-lockfile-{{ checksum "Cargo.lock" }}
-
-            # Test the code
-            - run:
-                  name: "Cargo publish"
-                  # TODO: parallelize tests
-                  command: |
-                      cargo publish --token $CARGO_PUBLISH_TOKEN
+                  key: *cache-key
+            - run: cargo publish --token $CARGO_PUBLISH_TOKEN
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-    # Test the code on Linux
-    test:
+    testing:
         jobs:
-            - test-linux
+            - test:
+                  name: test-on-<< matrix.platform >>
+                  matrix:
+                      parameters:
+                          platform:
+                              ["linux-docker", "linux", "macos", "win/default"]
 
     # Publish to crates.io on tags
-    publish:
+    publishing:
         jobs:
-            - test-linux:
-                  # Note: filters act like an OR, not an AND
-                  filters: *tag-filter
-
-            - cargo-publish:
+            - publish:
                   context: cargo-publish
-
-                  requires:
-                      - test-linux
-
-                  # Note: filters act like an OR, not an AND
                   filters: *tag-filter

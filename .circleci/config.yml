@@ -32,6 +32,7 @@ executors:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
+    # Tests only unit tests
     test:
         parameters:
             platform:
@@ -42,7 +43,7 @@ jobs:
         steps:
             - checkout
             - restore_cache:
-                  keys: cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
+                  key: cargo-jundler-{{ arch }}-{{ checksum "Cargo.toml" }}
             - run: curl -o rustup https://sh.rustup.rs
             - run: bash rustup -y
             - run: rm ~/.gitconfig

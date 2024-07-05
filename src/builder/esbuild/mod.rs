@@ -1,6 +1,7 @@
 pub mod errors;
 mod helpers;
 mod lock;
+mod tests;
 
 pub use errors::Error;
 
@@ -36,7 +37,7 @@ pub struct ESBuild {
 impl ESBuild {
     /// Creates a new esbuild instance. Expects that `esbuild_cache_dir` is a valid directory.
     pub fn new(esbuild_cache_dir: PathBuf) -> Result<Self, Error> {
-        let lockfile_path = esbuild_cache_dir.join("node.lockb");
+        let lockfile_path = esbuild_cache_dir.join("jundler.lockb");
 
         let lockfile = if lockfile_path.exists() {
             match ESBuildLock::load(lockfile_path.clone()) {
@@ -78,7 +79,7 @@ impl ESBuild {
                 warn!("Checksum mismatch for node binary, re-downloading"); // TODO: Better UI
 
                 // Remove the binary from the cache
-                self.lockfile.remove(&archive);
+                self.remove(&archive)?;
 
                 // Download the binary again
                 self.download(&ESBUILD_VERSION)?
@@ -154,10 +155,7 @@ impl ESBuild {
             version: version.clone(),
             path: node_archive_path.clone(),
             checksum: archive_checksum,
-        });
-
-        // Save the lockfile
-        self.lockfile.save()?;
+        })?;
 
         Ok(node_executable_path)
     }
@@ -168,7 +166,7 @@ impl ESBuild {
         let archived_binary = File::open(&esbuild_archive.path).map_err(|err| Error::Io {
             err,
             path: esbuild_archive.path.clone(),
-            action: "opening node archive file at".to_string(),
+            action: "opening esbuild archive file at".to_string(),
         })?;
 
         let mut zstd_decoder = zstd::Decoder::new(archived_binary).map_err(|err| Error::Io {
@@ -187,7 +185,7 @@ impl ESBuild {
             File::create(&extracted_binary_path).map_err(|err| Error::Io {
                 err,
                 path: extracted_binary_path.clone(),
-                action: "creating extracted node binary file at".to_string(),
+                action: "creating extracted esbuild binary file at".to_string(),
             })?;
 
         let mut buf: Vec<u8> = vec![];
@@ -203,9 +201,24 @@ impl ESBuild {
         extracted_binary.write_all(&buf).map_err(|err| Error::Io {
             err,
             path: extracted_binary_path.clone(),
-            action: "writing to extracted node binary file at".to_string(),
+            action: "writing to extracted esbuild binary file at".to_string(),
         })?;
 
         Ok(extracted_binary_path)
+    }
+
+    /// Remove the binary from the cache. Returns the path to the binary.
+    pub fn remove(&mut self, esbuild_archive: &ESBuildExecutable) -> Result<PathBuf, Error> {
+        // Remove the binary from the cache
+        fs::remove_file(&esbuild_archive.path).map_err(|err| Error::Io {
+            err,
+            path: esbuild_archive.path.clone(),
+            action: "removing esbuild binary at".to_string(),
+        })?;
+
+        // Remove the binary from the lockfile
+        self.lockfile.remove(esbuild_archive)?;
+
+        Ok(esbuild_archive.path.clone())
     }
 }

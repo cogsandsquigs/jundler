@@ -61,15 +61,19 @@ impl ESBuildLock {
     }
 
     /// Given a node executable, insert it into the lockfile
-    pub fn add(&mut self, esbuild_executable: ESBuildExecutable) {
+    pub fn add(&mut self, esbuild_executable: ESBuildExecutable) -> Result<(), Error> {
         self.executable = Some(esbuild_executable);
+
+        self.save()
     }
 
     /// Remove a node executable from the lockfile
-    pub fn remove(&mut self, node_executable: &ESBuildExecutable) {
+    pub fn remove(&mut self, node_executable: &ESBuildExecutable) -> Result<(), Error> {
         if self.executable.as_ref() == Some(node_executable) {
             self.executable = None;
         }
+
+        self.save()
     }
 }
 

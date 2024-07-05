@@ -36,7 +36,7 @@ pub struct NodeManager {
 impl NodeManager {
     /// Creates a new NodeManager. We expect that `node_cache_dir` exists and is writable.
     pub fn new(node_cache_dir: PathBuf) -> Result<Self, Error> {
-        let lockfile_path = node_cache_dir.join("node.lockb");
+        let lockfile_path = node_cache_dir.join("jundler.lockb");
 
         let lockfile = if lockfile_path.exists() {
             match NodeManagerLock::load(lockfile_path.clone()) {

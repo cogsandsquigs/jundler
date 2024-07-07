@@ -8,8 +8,7 @@ mod tests;
 use crate::js_config::{PackageConfig, ProjectType, SEAConfig};
 use crate::ui::messages::{
     BUNDLE_PROJ_MSG, CLEAN_CACHE_MSG, COPY_PROJ_MSG, GEN_SEA_BLOB_MSG, HOST_NODE_MSG,
-    INIT_BUILD_MSG, INIT_CLEAN_MSG, INJECT_APP_MSG, MACOS_CODESIGN_MSG, MAX_MSG_LEN,
-    TARGET_NODE_MSG, WELCOME_MSG, WINDOWS_CODESIGN_MSG,
+    INJECT_APP_MSG, MACOS_CODESIGN_MSG, MAX_MSG_LEN, TARGET_NODE_MSG, WINDOWS_CODESIGN_MSG,
 };
 use crate::ui::Interface;
 use anyhow::{Context, Ok, Result};
@@ -34,7 +33,7 @@ pub struct Builder {
     esbuild: ESBuild,
 
     /// The interface to UI
-    interface: Interface,
+    pub interface: Interface,
 }
 
 impl Builder {
@@ -65,21 +64,11 @@ impl Builder {
             interface: Interface::new(MAX_MSG_LEN),
         };
 
-        // Draw the welcome message
-        builder.interface.println(WELCOME_MSG);
-
-        builder
-            .interface
-            .warn("This is experimental and may not work as expected.");
-        builder.interface.warn("Submit an issue at https://github.com/cogsandsquigs/jundler if you encounter any problems.");
-
         Ok(builder)
     }
 
     /// Cleans the cache directory of the Node.js manager.
     pub fn clean_cache(&mut self) -> Result<()> {
-        self.interface.println(INIT_CLEAN_MSG);
-
         let spinner = self.interface.spawn_spinner(CLEAN_CACHE_MSG, 0);
 
         self.node_manager.clean_cache()?;
@@ -100,8 +89,6 @@ impl Builder {
         target_arch: Arch,
         bundle: bool,
     ) -> Result<()> {
-        self.interface.println(INIT_BUILD_MSG);
-
         // Get the configuration
         let (mut sea_config, package_config) = get_configs(project_dir)?;
         let (host_os, host_arch) = (get_host_os(), get_host_arch());

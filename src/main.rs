@@ -3,10 +3,9 @@ mod cli;
 mod js_config;
 mod ui;
 
-use anyhow::{Context, Result};
-use builder::Builder;
+use anyhow::Result;
 use clap::Parser;
-use cli::Args;
+use cli::Cli;
 use std::{env, fs, path::PathBuf};
 
 fn main() -> Result<()> {
@@ -21,27 +20,9 @@ fn main() -> Result<()> {
         .format_timestamp(None)
         .init();
 
-    let args = Args::parse();
+    let cli = Cli::parse();
 
-    let mut builder = Builder::new(get_cache_dir())?;
-
-    match args.action {
-        cli::Action::Build {
-            project_dir,
-            node_version,
-            os,
-            arch,
-            bundle,
-        } => {
-            let project_dir: std::path::PathBuf = project_dir
-                .canonicalize()
-                .context("Invalid project directory!")?
-                .to_path_buf();
-
-            builder.build(&project_dir, node_version, os, arch, bundle)?;
-        }
-        cli::Action::Clean => builder.clean_cache()?,
-    };
+    cli.run()?;
 
     Ok(())
 }

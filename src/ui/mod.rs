@@ -128,7 +128,7 @@ impl Spinner {
         raw_spinner.set_style(
             ProgressStyle::default_spinner()
                 .template(&get_template(
-                    "✅",
+                    &console::style("✓").green().to_string(),
                     self.num_dots,
                     self.depth,
                     self.new_depth,

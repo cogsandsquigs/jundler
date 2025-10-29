@@ -56,7 +56,7 @@ Yup. Jundler will automagically detect typescript --- ESBuild does the rest!
 > [!NOTE]
 > If Jundler is having issues with your TypeScript project, try running `jundler <path-to-nodejs-project> --bundle` to bundle your project manually.
 
-### My project is giving some weird erorr relating to `node-gyp`. What happened?
+### My project is giving some weird error relating to `node-gyp`. What happened?
 
 This is a known issue with the Single Executable Application API. Jundler can't fix this for you (yet!), as it involves packaging the binary in such a way that the dependent API can use it as if it was installed on raw Node.js. If you're having issues with `node-gyp` or `node-pre-gyp`, please open an issue on the [Jundler GitHub repository](http://github.com/cogsandsquigs/jundler/issues).
 
